@@ -2,7 +2,7 @@
 Pyrobot — Application Configuration
 Reads all settings from environment variables / .env file.
 """
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 
 
@@ -23,15 +23,19 @@ class Settings(BaseSettings):
     DEFAULT_AI_MODEL: str = "gpt-4o"
 
     # ── CORS ──────────────────────────────────────────────────
+    # Note: Ensure .env value is JSON format: ["http://localhost:3000"]
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000"]
 
     # ── STORAGE ───────────────────────────────────────────────
     STORAGE_BACKEND: str = "local"
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
+    # ── MODERN CONFIGURATION ──────────────────────────────────
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore"  # This prevents crashes from NEXT_PUBLIC_ variables
+    )
 
 
 settings = Settings()

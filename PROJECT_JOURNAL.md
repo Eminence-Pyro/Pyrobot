@@ -12,7 +12,7 @@
 **Stage:** 1 — Pre-build Architecture & Design System
 **Status:** ✅ Complete
 
-### The Challenge
+### The Challenge (1)
 
 Pyrobot's PRD spans 5 major versions with 20+ features. The risk of starting to code without a clear foundation is real: scope creep, architectural debt, a product that never ships.
 
@@ -80,42 +80,50 @@ Pyrobot's PRD spans 5 major versions with 20+ features. The risk of starting to 
 **Stage:** Sprint 0 — Repository, Tooling, Environment
 **Status:** ✅ Complete
 
-### The Challenge
+### The Challenge(2)
 
 Before any feature development, establish a foundation so clean that any developer can clone the repo, run one command, and have Pyrobot running locally. No AI features. No chat. Just a verified, runnable foundation.
 
-### Decisions Made
+### Decisions Made (1)
 
-**Monorepo structure (single repository)**
+### **Monorepo structure (single repository)**
+
 - `frontend/` and `backend/` co-located in one repo.
 - Why: Easier to keep in sync, single PR for full-stack changes, simpler CI configuration.
 - Alternative considered: Separate repos — rejected because cross-repo coordination adds friction at this stage.
 
 **Private repository at launch**
+
 - API keys, early architecture decisions, and unfinished code should not be public.
 - Can go public at any time. Starting public can't be undone.
 
 **`requirements.txt` with pinned versions**
+
 - `pip freeze > requirements.txt` after initial install locks exact versions.
 - Why: Reproducibility. The app that works today should work in 6 months on a fresh machine.
 
 **`psycopg[binary]` (psycopg3) over psycopg2**
+
 - psycopg3 has native async support — required for SQLAlchemy 2.x async engine.
 - psycopg2 is sync-only, requires workarounds for async. Not worth the compromise.
 
 **Lazy client initialization in AI providers**
+
 - OpenAI client created on first use, not at import time.
 - Why: The app should start without an API key configured. Fails loudly only when AI is actually called.
 
 **`pydantic-settings` for configuration**
+
 - Environment variables validated as typed Python objects via `Settings(BaseSettings)`.
 - Invalid config (missing `DATABASE_URL`) raises a clear error at startup, not a cryptic runtime crash.
 
 **`.env.example` committed, `.env` gitignored**
+
 - `.env.example` shows every required variable with placeholder values.
 - New developers know exactly what to fill in without asking.
 
 ### Repository Structure Created
+
 ```
 pyrobot/
 ├── frontend/                    ← Next.js (initialized in Stage 0.3)
@@ -166,6 +174,7 @@ pyrobot/
 ### Verification Gate
 
 Before Stage 1 (Backend Foundation), confirm:
+
 - [ ] `uvicorn app.main:app --reload` starts without errors
 - [ ] `GET /` returns `{"status": "ok"}`
 - [ ] `GET /docs` shows Swagger UI
@@ -186,6 +195,7 @@ Before Stage 1 (Backend Foundation), confirm:
 ---
 
 *Entry format:*
+
 ```markdown
 ## Entry #NNN — Stage N: [Name]
 **Date:**
@@ -199,12 +209,15 @@ Before Stage 1 (Backend Foundation), confirm:
 ### Stage Outcome
 ### Next Stage
 ```
+
 ## Sprint 0 - Backend Bootstrap
 
 ### Challenge
+
 Create the first executable backend service while keeping future architecture extensible.
 
 ### Decision
+
 Implement a minimal FastAPI application with:
 
 - application entry point
@@ -220,9 +233,11 @@ Verified application startup and established foundation for API development.
 ## Sprint 0 - API Foundation
 
 ### Challenge
+
 Introduce API versioning before additional endpoints are implemented.
 
 ### Decision
+
 Created a versioned API structure:
 
 api/v1/
@@ -237,6 +252,7 @@ Future modules include:
 Introduced repositories layer to separate persistence concerns from business logic.
 
 ### Outcome
+
 Backend now supports versioned endpoints and follows:
 
 Route → Service → Repository → Database
@@ -251,16 +267,14 @@ Root Cause: npx create-next-app@latest resolved to a canary preview version (16.
 Fix: Deleted broken folder. Recreated with create-next-app@14.2.29 — the stable LTS version with full Windows SWC support.
 Lesson: Always pin create-next-app to a stable version tag in the project setup instructions. Never use @latest on a new project — it can resolve to pre-release builds.
 
-
 ✅ Validation Checklist — Before We Proceed
 Confirm each item before replying:
 
  frontend folder deleted and recreated cleanly
  npm run dev starts without errors
- http://localhost:3000 shows the Next.js default welcome page
+ <http://localhost:3000> shows the Next.js default welcome page
  Node version is 18+ (node --version in terminal)
  No SWC download errors in the terminal output
-
 
 Once you confirm these pass, we move immediately into Stage 2 — Backend Foundation: FastAPI scaffolding, PostgreSQL connection, and JWT auth. Are you good to run the fix?You said: instead of using app 14.instead of using app 14.2.x, why not 16.2 which is the latest stable version5 vulnerabilities (1 moderate, 4 high)
 To address all issues (including breaking changes), run:
@@ -296,4 +310,99 @@ Decision Update — Frontend Framework Version
 Next.js 14.2.x → Next.js 16.2.x (stable)
 Rationale: 16.2.6 is the current stable LTS. It delivers ~400% faster dev server startup, ~50% faster SSR, and 200+ Turbopack fixes — all direct wins for our streaming AI chat interface. The original 404 error was caused by a canary tag, not the version number itself. Medium
 
+---
+---
 
+## Entry #004 — Sprint 0 Addendum: npm Audit & Allow-Scripts Resolution
+
+**Date:** June 2026
+**Stage:** Sprint 0 — Frontend Tooling Cleanup
+**Status:** ✅ Complete
+
+### The Challenge
+
+After scaffolding completed on Next.js 16.2, `npm audit` reported 2 moderate vulnerabilities (later corrected from an initial misread of "5 vulnerabilities, 1 moderate/4 high" — re-run showed 2 moderate), both stemming from `next`'s internal bundled `postcss` dependency (XSS via unescaped `</style>` in stringify output). Additionally, `sharp` and `unrs-resolver` had pending install scripts blocked by `npm`'s `allowScripts` policy.
+
+### Decisions Made
+
+**Do not run `npm audit fix --force`**
+
+- The suggested force-fix would downgrade `next` from `16.2.x` to `9.3.3` — a ~7 major version regression that would break the entire frontend (App Router, Server Components, Turbopack, everything).
+- The vulnerability lives in `next`'s own vendored `postcss` copy, not our direct dependency tree. This is Next.js's responsibility to patch in a future release.
+- **Accepted as a known, low-severity, upstream-pending issue.** Re-check on next `npm update` / Next.js patch release.
+
+**Correct allow-scripts syntax**
+
+- `npm approve-scripts <pkg-name>` is not a valid command (caused "Nothing to approve" silently).
+- Correct command: `npm approve-scripts --allow-scripts-pending`, which interactively reviews all pending install scripts (`sharp@0.34.5`, `unrs-resolver@1.12.2`) for approval.
+- Both packages are legitimate (native binary builds for image optimization and module resolution) — approved.
+
+### Lessons Learned
+
+- `npm audit fix --force` should **never** be run reflexively — always inspect what it proposes to change first (`npm audit` shows the target version before forcing).
+- Vulnerabilities in a framework's *own* bundled dependencies are best tracked and waited on, not force-patched by the consumer.
+- `npm approve-scripts` requires the `--allow-scripts-pending` flag for interactive review; passing a package name directly does not work as one might assume.
+
+### Stage Outcome
+
+- ✅ npm audit vulnerabilities reviewed and consciously deferred (upstream Next.js issue)
+- ✅ `sharp` and `unrs-resolver` install scripts approved via correct command
+- ✅ Frontend dependency tree confirmed stable on Next.js 16.2.x — no downgrade
+
+### Deferred Items
+
+- **Mobile device testing via `allowedDevOrigins`**: dev server warns about cross-origin HMR when accessed from phone on local network (e.g., `172.27.49.135`). Revisit when building actual UI screens (Stage 4+), especially Stage 8 (Polish/mobile layout verification). Not needed while only the default boilerplate page exists.
+
+### Next Stage
+
+**Stage 2 — Backend Foundation** (per Entry #003): FastAPI scaffolding, PostgreSQL connection, Alembic migrations, JWT auth with Argon2.
+
+**Gate condition:** Register a user, log in, call `/auth/me` with token successfully via Postman/curl
+---
+
+---
+
+## Entry #005 — Stage 2: Backend Foundation (In Progress)
+
+**Date:** June 2026
+**Stage:** 2 — Backend Foundation
+**Status:** ⏳ In Progress
+
+### The Challenge
+
+Stage 1 (architecture + frontend scaffolding) is complete and verified. Stage 2 requires a running database before any models, migrations, or auth endpoints can be built.
+
+### Decisions Made
+
+**PostgreSQL via Docker Compose (not native install)**
+
+- Docker Desktop installed (v29.5.3) — required enabling WSL2 first via `wsl --install` (elevated Command Prompt), since it wasn't previously installed on this machine.
+- `docker-compose.yml` created at project root defining a `postgres:17` service with:
+  - Named volume `pyrobot_pg_data` for data persistence across container restarts/recreations
+  - Port `5432:5432` mapped to host, so the natively-running FastAPI app can connect via `localhost`
+  - Healthcheck via `pg_isready`
+  - Credentials sourced from `.env` (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`) with sane dev defaults
+
+**`DATABASE_URL` driver: `postgresql+psycopg://`**
+
+- The `+psycopg` suffix tells SQLAlchemy 2.x to use psycopg3 (per Sprint 0 decision), not psycopg2.
+
+### Bugs Encountered
+
+**WSL2 not installed / Docker Desktop daemon connection failure**
+
+- Initial `docker ps` failed: `npipe:////./pipe/docker_engine` not found — Docker Desktop's auto WSL install attempt failed due to missing elevation.
+- Fix: ran `wsl --install` from an **elevated** Command Prompt, restarted, then launched Docker Desktop manually from Start menu. After Docker Desktop fully started (green "Engine running"), `docker ps` succeeded.
+- Lesson: Docker Desktop on Windows silently depends on WSL2 being present *and* properly initialized — its own bundled installer can fail without admin rights, requiring a manual elevated `wsl --install`.
+
+### Stage Outcome (so far)
+
+- ✅ Docker Desktop + WSL2 installed and verified (`docker --version`, `docker ps`)
+- ✅ `docker-compose.yml` created (PostgreSQL 17, named volume, healthcheck)
+- ✅ Container `pyrobot-postgres` running and healthy on port 5432
+- ⏳ `.env` updated with `POSTGRES_*` and `DATABASE_URL` — pending confirmation
+- ⏳ Remaining Stage 2 steps: SQLAlchemy session setup, User model, Alembic migration 001, Argon2 + JWT security module, auth schemas, repository/service/router layers, gate test
+
+### Next Step
+
+Verify `pydantic-settings` correctly loads `DATABASE_URL` from `.env`, then build `core/database.py` (SQLAlchemy 2.x async engine + session factory).

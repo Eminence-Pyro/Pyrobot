@@ -92,7 +92,7 @@ Before any feature development, establish a foundation so clean that any develop
 - Why: Easier to keep in sync, single PR for full-stack changes, simpler CI configuration.
 - Alternative considered: Separate repos — rejected because cross-repo coordination adds friction at this stage.
 
-**Private repository at launch**
+### **Private repository at launch**
 
 - API keys, early architecture decisions, and unfinished code should not be public.
 - Can go public at any time. Starting public can't be undone.
@@ -107,7 +107,7 @@ Before any feature development, establish a foundation so clean that any develop
 - psycopg3 has native async support — required for SQLAlchemy 2.x async engine.
 - psycopg2 is sync-only, requires workarounds for async. Not worth the compromise.
 
-**Lazy client initialization in AI providers**
+### **Lazy client initialization in AI providers**
 
 - OpenAI client created on first use, not at import time.
 - Why: The app should start without an API key configured. Fails loudly only when AI is actually called.
@@ -124,7 +124,6 @@ Before any feature development, establish a foundation so clean that any develop
 
 ### Repository Structure Created
 
-```
 pyrobot/
 ├── frontend/                    ← Next.js (initialized in Stage 0.3)
 ├── backend/
@@ -151,9 +150,8 @@ pyrobot/
 ├── README.md
 ├── .gitignore
 └── .env.example
-```
 
-### Lessons Learned
+### Lessons Learned (002)
 
 - Get the `.gitignore` right before the first commit. Accidentally committing `node_modules/` or `.env` to git history is painful to undo.
 - `pydantic-settings` is the correct pattern for FastAPI config — not `os.getenv()` scattered everywhere.
@@ -232,11 +230,11 @@ Verified application startup and established foundation for API development.
 
 ## Sprint 0 - API Foundation
 
-### Challenge
+### Challenge (0)
 
 Introduce API versioning before additional endpoints are implemented.
 
-### Decision
+### Decision (0)
 
 Created a versioned API structure:
 
@@ -251,7 +249,7 @@ Future modules include:
 
 Introduced repositories layer to separate persistence concerns from business logic.
 
-### Outcome
+### Outcome (0)
 
 Backend now supports versioned endpoints and follows:
 
@@ -283,7 +281,7 @@ Run npm audit for details.
 npm warn allow-scripts 1 package has install scripts not yet covered by allowScripts:
 npm warn allow-scripts   unrs-resolver@1.12.2 (postinstall: node postinstall.js)
 npm warn allow-scripts
-npm warn allow-scripts Run npm approve-scripts --allow-scripts-pending to review, or npm approve-scripts <pkg> to allow.
+npm warn allow-scripts Run npm approve-scripts --allow-scripts-pending to review, or npm approve-scripts `<pkg>` to allow.
 Success! Created frontend at C:\Users\nnata\Pyrobot\frontend
 A new version of create-next-app is available!
 You can update by running: npm i -g create-next-app
@@ -323,7 +321,7 @@ Rationale: 16.2.6 is the current stable LTS. It delivers ~400% faster dev server
 
 After scaffolding completed on Next.js 16.2, `npm audit` reported 2 moderate vulnerabilities (later corrected from an initial misread of "5 vulnerabilities, 1 moderate/4 high" — re-run showed 2 moderate), both stemming from `next`'s internal bundled `postcss` dependency (XSS via unescaped `</style>` in stringify output). Additionally, `sharp` and `unrs-resolver` had pending install scripts blocked by `npm`'s `allowScripts` policy.
 
-### Decisions Made
+### Decisions Made (004)
 
 **Do not run `npm audit fix --force`**
 
@@ -331,19 +329,19 @@ After scaffolding completed on Next.js 16.2, `npm audit` reported 2 moderate vul
 - The vulnerability lives in `next`'s own vendored `postcss` copy, not our direct dependency tree. This is Next.js's responsibility to patch in a future release.
 - **Accepted as a known, low-severity, upstream-pending issue.** Re-check on next `npm update` / Next.js patch release.
 
-**Correct allow-scripts syntax**
+### **Correct allow-scripts syntax**
 
 - `npm approve-scripts <pkg-name>` is not a valid command (caused "Nothing to approve" silently).
 - Correct command: `npm approve-scripts --allow-scripts-pending`, which interactively reviews all pending install scripts (`sharp@0.34.5`, `unrs-resolver@1.12.2`) for approval.
 - Both packages are legitimate (native binary builds for image optimization and module resolution) — approved.
 
-### Lessons Learned
+### Lessons Learned (004)
 
 - `npm audit fix --force` should **never** be run reflexively — always inspect what it proposes to change first (`npm audit` shows the target version before forcing).
 - Vulnerabilities in a framework's *own* bundled dependencies are best tracked and waited on, not force-patched by the consumer.
 - `npm approve-scripts` requires the `--allow-scripts-pending` flag for interactive review; passing a package name directly does not work as one might assume.
 
-### Stage Outcome
+### Stage Outcome (4)
 
 - ✅ npm audit vulnerabilities reviewed and consciously deferred (upstream Next.js issue)
 - ✅ `sharp` and `unrs-resolver` install scripts approved via correct command
@@ -357,7 +355,8 @@ After scaffolding completed on Next.js 16.2, `npm audit` reported 2 moderate vul
 
 **Stage 2 — Backend Foundation** (per Entry #003): FastAPI scaffolding, PostgreSQL connection, Alembic migrations, JWT auth with Argon2.
 
-**Gate condition:** Register a user, log in, call `/auth/me` with token successfully via Postman/curl
+### **Gate condition:** Register a user, log in, call `/auth/me` with token successfully via Postman/curl
+
 ---
 
 ---
@@ -368,13 +367,13 @@ After scaffolding completed on Next.js 16.2, `npm audit` reported 2 moderate vul
 **Stage:** 2 — Backend Foundation
 **Status:** ⏳ In Progress
 
-### The Challenge
+### The Challenge (5)
 
 Stage 1 (architecture + frontend scaffolding) is complete and verified. Stage 2 requires a running database before any models, migrations, or auth endpoints can be built.
 
-### Decisions Made
+### Decisions Made (5)
 
-**PostgreSQL via Docker Compose (not native install)**
+### **PostgreSQL via Docker Compose (not native install)**
 
 - Docker Desktop installed (v29.5.3) — required enabling WSL2 first via `wsl --install` (elevated Command Prompt), since it wasn't previously installed on this machine.
 - `docker-compose.yml` created at project root defining a `postgres:17` service with:
@@ -389,7 +388,7 @@ Stage 1 (architecture + frontend scaffolding) is complete and verified. Stage 2 
 
 ### Bugs Encountered
 
-**WSL2 not installed / Docker Desktop daemon connection failure**
+**`WSL2 not installed / Docker Desktop daemon connection failure`**
 
 - Initial `docker ps` failed: `npipe:////./pipe/docker_engine` not found — Docker Desktop's auto WSL install attempt failed due to missing elevation.
 - Fix: ran `wsl --install` from an **elevated** Command Prompt, restarted, then launched Docker Desktop manually from Start menu. After Docker Desktop fully started (green "Engine running"), `docker ps` succeeded.
@@ -406,3 +405,28 @@ Stage 1 (architecture + frontend scaffolding) is complete and verified. Stage 2 
 ### Next Step
 
 Verify `pydantic-settings` correctly loads `DATABASE_URL` from `.env`, then build `core/database.py` (SQLAlchemy 2.x async engine + session factory).
+
+## Entry #006 — Stage 2.1: SQLAlchemy Domain Models
+
+### Challenge (6)
+
+Implement the foundational database schema for
+authentication, conversations, messages, and memory.
+
+### Decision (6)
+
+Created four core SQLAlchemy entities:
+
+- User
+- Conversation
+- Message
+- Memory
+
+Adopted UUID primary keys and a shared TimestampMixin.
+
+Maintained a single DeclarativeBase in core/database.py.
+
+### Outcome (6)
+
+The application successfully starts and all health
+checks pass with the new model layer integrated.

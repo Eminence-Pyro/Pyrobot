@@ -88,7 +88,7 @@ Before any feature development, establish a foundation so clean that any develop
 
 ### **Monorepo structure (single repository)**
 
-- `frontend/` and `backend/` co-located in one repo.
+- `frontend/` and `backend/` co-located inalembi one repo.
 - Why: Easier to keep in sync, single PR for full-stack changes, simpler CI configuration.
 - Alternative considered: Separate repos — rejected because cross-repo coordination adds friction at this stage.
 
@@ -273,40 +273,6 @@ Confirm each item before replying:
  <http://localhost:3000> shows the Next.js default welcome page
  Node version is 18+ (node --version in terminal)
  No SWC download errors in the terminal output
-
-Once you confirm these pass, we move immediately into Stage 2 — Backend Foundation: FastAPI scaffolding, PostgreSQL connection, and JWT auth. Are you good to run the fix?You said: instead of using app 14.instead of using app 14.2.x, why not 16.2 which is the latest stable version5 vulnerabilities (1 moderate, 4 high)
-To address all issues (including breaking changes), run:
-  npm audit fix --force
-Run npm audit for details.
-npm warn allow-scripts 1 package has install scripts not yet covered by allowScripts:
-npm warn allow-scripts   unrs-resolver@1.12.2 (postinstall: node postinstall.js)
-npm warn allow-scripts
-npm warn allow-scripts Run npm approve-scripts --allow-scripts-pending to review, or npm approve-scripts `<pkg>` to allow.
-Success! Created frontend at C:\Users\nnata\Pyrobot\frontend
-A new version of create-next-app is available!
-You can update by running: npm i -g create-next-app
-(venv) PS C:\Users\nnata\Pyrobot>Show more10:27 PMClaude responded: Great catch — and a fair question.Great catch — and a fair question. Let me give you the honest answer.Searched the webSearched the webYou are 100% correct — and I owe you a straight apology and explanation.
-I was wrong to recommend 14.2.x. My reasoning was outdated (that was the safe version in late 2024). Here's the truth:
-Next.js 16.2.6 is the current stable release as of May 7, 2026. That is exactly what you should be using. Wikipedia
-The error you originally hit wasn't a version-too-new problem — it was specifically a canary/preview tag problem (16.3.0-preview.0). That's a different issue entirely. 16.2.x is fully stable and the right choice.
-
-✅ Good News — You're Already on the Right Version
-Your terminal output shows the install succeeded cleanly:
-Success! Created frontend at C:\Users\nnata\Pyrobot\frontend
-No SWC 404. No download failures. That means 16.2 installed correctly on your Windows machine. You're good.
-The remaining items to address:
-5 vulnerabilities (1 moderate, 4 high) — run this:
-powershellcd frontend
-npm audit fix
-Only use --force if audit fix alone fails, since force can introduce breaking changes.
-allow-scripts warning for unrs-resolver — this is safe to approve:
-powershellnpm approve-scripts unrs-resolver
-
-📓 Journal Correction Entry
-Decision Update — Frontend Framework Version
-
-Next.js 14.2.x → Next.js 16.2.x (stable)
-Rationale: 16.2.6 is the current stable LTS. It delivers ~400% faster dev server startup, ~50% faster SSR, and 200+ Turbopack fixes — all direct wins for our streaming AI chat interface. The original 404 error was caused by a canary tag, not the version number itself. Medium
 
 ---
 ---

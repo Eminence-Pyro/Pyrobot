@@ -510,7 +510,7 @@ This also retroactively explains the original mystery from Entry #005: `psql` su
 ---
 
 ## Entry #009 — Stage 2.3: Auth Module
-**Date:** June 17, 2026
+**Date:** June 2026
 **Stage:** 2.3 — Auth Module
 **Status:** ✅ Complete
 
@@ -522,14 +522,17 @@ Stage 2.2 left us with a working database and a `User` model, but no way to actu
 2. **Argon2 over bcrypt** for password hashing, via `passlib` + `argon2-cffi` — Argon2 is the Password Hashing Competition winner and is memory-hard, resisting GPU/ASIC cracking attempts far better than bcrypt.
 3. **Access token only for V1**, via `python-jose`. Refresh-token rotation is already scaffolded in `config.py` (`JWT_REFRESH_TOKEN_EXPIRE_DAYS`) but deliberately deferred — the Stage 2 gate only requires register → login → `/me`, and refresh-token revocation done properly is its own scoped piece of work.
 4. **Login by email**, matching the original API contract in the Master Document. `username` stays unique and reserved for a future public-facing display use, not authentication.
+5. **`HTTPBearer` over `OAuth2PasswordBearer` for `get_current_user`**, corrected mid-stage after manual Swagger testing. `OAuth2PasswordBearer` is the right tool for an actual OAuth2 password-grant flow (form-encoded `username`/`password`/`client_id`) — ours is a plain JSON login, so it was the wrong scheme even though it's the one most tutorials default to. `HTTPBearer` just means "read the Authorization header," which is what we're actually doing.
 
 ### Bugs Encountered (9)
 - **Pre-existing, unrelated**: `tests/test_health.py` called `/health` directly, but `health.router` is mounted under the `/api/v1` prefix in `main.py` — the real path was `/api/v1/health`. The route was always correct; only the test's path was wrong. Fixed as a one-line test correction.
 - **Local merge artifact, not a code bug**: after pulling in the new files, `auth.py` ended up nested one level too deep at `api/v1/auth/auth.py` instead of `api/v1/auth.py`. Pylance's `"auth" is unknown import symbol` was the literal, accurate signal that the file wasn't where `main.py` expected — moving it up one level and deleting the empty folder resolved it immediately.
+- **Swagger "Authorize" showed a username/password form, not a token field**: caused by `OAuth2PasswordBearer`, which renders Swagger's OAuth2 password-grant UI regardless of what the actual login endpoint accepts. Caught during the manual Stage 2.3 verification pass — swapped to `HTTPBearer(auto_error=False)`, which also required explicitly re-raising `401` ourselves, since `HTTPBearer`'s default behavior on a missing token is `403`, not the `401` our API contract documents.
 
 ### Lessons Learned (9)
 - An IDE static-analysis error like `"X" is unknown import symbol` is often the most direct signal you'll get that a file genuinely isn't where the code expects — worth checking the literal file path before assuming it's a stale-cache false positive.
 - Splitting "what the database knows" (repository) from "what's allowed to happen" (service) from "what HTTP status that becomes" (router) means each layer is testable independently — the test suite never had to know Argon2 was the specific hashing algorithm underneath.
+- FastAPI's security classes aren't interchangeable just because they all produce "a token in the Authorization header" — `OAuth2PasswordBearer` carries real OAuth2 password-grant semantics (a specific form shape, a specific default error code) that only matter if your login endpoint actually speaks that protocol. Picking the class that matches your actual flow, rather than the one every tutorial happens to use, avoided building something that merely looked right in code but broke the moment it was clicked through in Swagger.
 
 ### Stage Outcome (9)
 - ✅ `core/security.py` — Argon2 hashing + JWT create/decode

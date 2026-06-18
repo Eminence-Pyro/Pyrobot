@@ -548,3 +548,50 @@ Stage 2.2 left us with a working database and a `User` model, but no way to actu
 **Stage 3 — AI Integration**: `AIProvider` abstract base class, first concrete provider (GPT-4o), streaming endpoint.
 
 **Gate condition:** GPT-4o responds to a real prompt via a curl/terminal test.
+
+---
+---
+
+## Entry #010 — Stage 3: AI Integration
+**Date:** June 2026
+**Stage:** 3 — AI Integration
+**Status:** ✅ Complete
+
+### The Challenge
+The Provider Pattern interface (`AIProvider`, `base.py`, factory) was already designed in Stage 1 and scaffolded in Stage 2, but all three providers had `NotImplementedError` bodies. Stage 3's job was to fill them in, add the streaming chat endpoint, and prove a real AI responds through the full stack — JWT auth → router → service → provider → SSE stream back to the client.
+
+### Decisions Made (10)
+
+1. **Stateless chat for Stage 3.** The `/chat/stream` endpoint accepts the full conversation history in the request body and returns a response. No DB writes, no conversation IDs. Persistence is Stage 6 — deliberately deferred so Stage 3 stays focused on the one hard new problem: getting streaming working cleanly end-to-end.
+
+2. **SSE over WebSockets for streaming.** Server-Sent Events are one-directional (server → client), which is exactly what streaming AI responses need. WebSockets are bidirectional and add handshake complexity. SSE over HTTP/1.1 is simpler, works through proxies, and is trivially supported by `fetch()` in the browser.
+
+3. **`async with` for the OpenAI stream.** The `client.chat.completions.create(stream=True)` call returns an async context manager. Using `async with` instead of a bare `async for` ensures the underlying HTTP connection is properly closed if the client disconnects mid-stream — important for not leaking connections under load.
+
+4. **Disconnect check in the SSE generator.** `await http_request.is_disconnected()` is checked between every token. If the user closes the browser tab, we stop calling the AI immediately — saves API credits and keeps server resources clean.
+
+5. **`[DONE]` sentinel as the stream terminator.** The final SSE event is `data: [DONE]\n\n` — the same convention used by OpenAI's API. The frontend can listen for this rather than inferring end-of-stream from connection close, which is unreliable across proxies and load balancers.
+
+6. **JSON-encoded token payloads in SSE.** Each `data:` line carries `json.dumps(token)` rather than the raw token string. Newlines, quotes, and unicode in a response would break the SSE framing otherwise — any character that looks like an SSE protocol character gets safely escaped.
+
+7. **Mocked providers in tests.** Tests patch `get_provider` at the service layer rather than hitting real APIs. The router, schemas, SSE framing, auth protection, and system prompt injection are all exercised for real — only the external HTTP call is replaced. This keeps the suite fast, deterministic, and free of API key requirements in CI.
+
+8. **Claude's separate `system` parameter.** Anthropic's API doesn't accept a `{"role": "system", ...}` entry in the messages array — it has a dedicated top-level `system` parameter. `ClaudeProvider._split_messages()` extracts any system-role message before building the request, so the `ChatService` can pass a uniform message list to every provider without knowing about this difference.
+
+9. **Gemini's `"model"` role.** Google's SDK uses `"model"` where everyone else uses `"assistant"`. `GeminiProvider` translates at the boundary via `_ROLE_MAP`, so the rest of the codebase never has to know.
+
+### Stage Outcome (10)
+- ✅ `OpenAIProvider.generate()` and `.stream()` fully implemented
+- ✅ `ClaudeProvider` — full implementation with system prompt extraction
+- ✅ `GeminiProvider` — full implementation with role translation
+- ✅ `factory.py` — all three providers unlocked and mapped
+- ✅ `services/chat_service.py` — system prompt prepended, drives the provider
+- ✅ `schemas/chat.py` — `ChatRequest`, `ChatResponse`, `MessageIn`
+- ✅ `api/v1/chat.py` — `POST /chat/stream` (SSE) and `POST /chat/generate` (JSON), both JWT-protected
+- ✅ `tests/test_chat.py` — 5 passing tests (auth guard, generate response, unknown model 400, SSE format, system prompt injection)
+- ✅ Full suite: 11/11 passed
+
+### Next Stage
+**Stage 4 — Frontend Shell**: Next.js setup, design tokens, navigation skeleton, all screens navigate correctly.
+
+**Gate condition:** All screens navigate correctly in the browser.

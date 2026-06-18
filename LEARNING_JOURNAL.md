@@ -312,3 +312,32 @@ pip freeze | python -c "import sys; open('requirements.txt','w',encoding='utf-8'
 ---
 
 *Next lessons will be added as we build: the `AIProvider` abstract base class and streaming responses in Stage 3.*
+---
+
+## Lesson 017 — Server-Sent Events: Keeping the Connection Open
+
+**The problem**: HTTP is request-response by default — the client asks, the server answers, the connection closes. That's fine for a login endpoint. It's a terrible fit for streaming AI responses, where the server needs to send hundreds of small pieces of text over 3–10 seconds.
+
+**What SSE does**: a `text/event-stream` response tells the browser "keep this connection open, I'll keep sending you data." The format is simple plain text — each event is `data: <payload>\n\n`. The browser's `EventSource` API (or a `fetch` with a streaming reader) receives each `\n\n`-terminated chunk as it arrives. The server just writes to the response body whenever it has something to say.
+
+**Why not WebSockets**: WebSockets are bidirectional — the client can also send messages over the same connection. That's necessary for something like a collaborative editor, but for "AI is talking, browser is listening," it adds a handshake, a persistent connection lifecycle, and reconnection logic for zero extra benefit. SSE over HTTP is simpler, works through proxies and CDNs without special configuration, and is what every major AI API (OpenAI, Anthropic) uses for their streaming responses.
+
+**The `[DONE]` sentinel**: when the stream ends, we send `data: [DONE]\n\n` rather than just closing the connection. A clean TCP close doesn't always propagate reliably through load balancers and reverse proxies — a sentinel the frontend can explicitly parse is more robust. This is the same convention OpenAI uses, which is not a coincidence — it means frontend code written for OpenAI's streaming API works identically with Pyrobot's.
+
+---
+
+## Lesson 018 — Mocking at the Right Boundary
+
+**The question**: Stage 3 tests don't call real AI APIs. They mock the provider. Where exactly is the mock applied, and why there?
+
+**Where the mock lives**: `patch("app.services.chat_service.get_provider", return_value=mock_provider)`. This replaces the factory call inside `ChatService.__init__` — every layer *above* that (the router, SSE framing, JWT auth, Pydantic validation, system prompt injection) runs for real. Only the outbound HTTP call to OpenAI/Anthropic/Google is replaced.
+
+**Why not mock at a lower level** (e.g. mock `openai.AsyncOpenAI` directly): it would work, but it would also mean the test knows about OpenAI's internal SDK structure. If the SDK changes a class name, the test breaks even though our code didn't change. Mocking at `get_provider` means the test only knows about our own interface, which is much more stable.
+
+**Why not mock at a higher level** (e.g. mock `ChatService.stream` entirely): then we'd be testing that a mock returns what we told it to return — not very useful. The value of `test_system_prompt_is_prepended` is that it actually runs `ChatService._build_messages()`, which is our code, and confirms the system prompt is in the right place. Mock too high and you lose that.
+
+**The rule of thumb**: mock at the boundary between *your* code and *someone else's* code. The provider is that boundary — everything on the left is Pyrobot, everything on the right is a third-party SDK.
+
+---
+
+*Next lessons will be added as we build: Next.js App Router, design token setup, and the Frontend Shell in Stage 4.*

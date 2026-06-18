@@ -1,9 +1,23 @@
+import sys
 from logging.config import fileConfig
+from pathlib import Path
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+
+# -- MAKE THE `app` PACKAGE IMPORTABLE ------------
+# alembic.ini sets `prepend_sys_path = .`, which only works if Alembic
+# is invoked from inside backend/. This makes it work regardless of
+# the current working directory the command is run from.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+# Import the app's settings and every model so Base.metadata is fully
+# populated before Alembic compares it against the live database.
+from app.core.config import settings
+from app.core.database import Base
+import app.models # noqa: F401 - registers User/Conversation/Message/Memory on Base.metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -14,11 +28,26 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+# -- REAL DATABASE URL ------------------
+# alembic.ini ships with a placeholder URL on purpose - real credentials
+# never belong in a file that's tracked by git. We override it here with
+# the same DATABASE_URL the FASTAPI app reads from .env (already gitignored).
+print("\n=== ALEMBIC DATABASE URL ===")
+print(settings.DATABASE_URL)
+print("===========================\n")
+
+config.set_main_option(
+    "sqlalchemy.url",
+    settings.DATABASE_URL
+)
+
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

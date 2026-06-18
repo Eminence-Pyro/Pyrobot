@@ -88,7 +88,7 @@ Before any feature development, establish a foundation so clean that any develop
 
 ### **Monorepo structure (single repository)**
 
-- `frontend/` and `backend/` co-located inalembi one repo.
+- `frontend/` and `backend/` co-located in one repo.
 - Why: Easier to keep in sync, single PR for full-stack changes, simpler CI configuration.
 - Alternative considered: Separate repos — rejected because cross-repo coordination adds friction at this stage.
 
@@ -396,3 +396,110 @@ Maintained a single DeclarativeBase in core/database.py.
 
 The application successfully starts and all health
 checks pass with the new model layer integrated.
+
+---
+---
+
+## Entry #007 — Stage 2.2: Alembic Wiring, First Migration, and Bug Fixes
+
+**Date:** June 2026
+**Stage:** 2 — Backend Foundation
+**Status:** ✅ Complete — unblocks remaining Stage 2 work
+
+### The Challenge (7)
+
+`alembic init alembic` had been run locally but never committed or wired up — `env.py` still had `target_metadata = None` and `alembic.ini` still held its placeholder URL, so no real migration could be generated. Generating one also exposed a latent bug in the `Message` model that had nothing to do with Alembic itself.
+
+### Decisions Made (7)
+
+**Override `sqlalchemy.url` from `env.py`, not `alembic.ini`**
+- `alembic.ini` is tracked by git — real database credentials should never live in a tracked file.
+- `env.py` now imports `app.core.config.settings` and calls `config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)`. The same gitignored `.env` the FastAPI app already reads is now the single source of truth for both the app and migrations.
+
+**Import all models in `env.py` before setting `target_metadata`**
+- Alembic's autogenerate only "sees" tables registered on `Base.metadata` *at the moment `env.py` runs*. Importing `app.models` (User, Conversation, Message, Memory) is what populates that registry.
+
+### Bugs Encountered (7)
+
+**`Message.metadata` collided with SQLAlchemy's reserved `Base.metadata`**
+- The instant `env.py` tried to import the models, it raised `InvalidRequestError: Attribute name 'metadata' is reserved when using the Declarative API`.
+- Every class inheriting `Base` already owns a `.metadata` attribute (the `MetaData` registry itself) — naming a column the same thing collides with it.
+- Fix: renamed the column attribute to `extra_data` in `backend/app/models/message.py`.
+- This bug existed silently since the model was first written. It never surfaced because nothing imported `app.models` until Alembic needed to.
+
+**`requirements.txt` saved as UTF-16, not UTF-8**
+- Root cause: `pip freeze > requirements.txt` run from PowerShell, where `>` redirection defaults to UTF-16LE. Confirmed via `file backend/requirements.txt` reporting "Unicode text, UTF-16."
+- Would have broken `pip install -r requirements.txt` on any Linux target (Railway, CI, Docker) — pip's parser expects UTF-8/ASCII.
+- Fix: re-saved as UTF-8, no BOM. Also removed a stray, unused `asyncpg==0.31.0` pin left over from earlier driver troubleshooting — the project uses `psycopg[binary]` exclusively.
+
+### Lessons Learned (7)
+
+- A model can be syntactically valid Python and still crash on import — the failure mode only appears once *something* actually imports it. Don't assume "the app starts fine" means every model file is safe.
+- Never trust a config file's encoding by how it looks in an editor — `file <filename>` from a real shell is the ground truth.
+- Migrations should be generated against a real running database and inspected before being trusted, not authored by hand.
+
+### Stage Outcome (7)
+
+- ✅ `env.py` wired: `target_metadata = Base.metadata`, real `DATABASE_URL` injected at runtime
+- ✅ `Message.extra_data` renamed — models import cleanly
+- ✅ Migration `92aa08f433c4_initial_schema.py` generated via `alembic revision --autogenerate`
+- ✅ Migration applied via `alembic upgrade head` — verified all 5 tables exist (`users`, `conversations`, `memories`, `messages`, `alembic_version`)
+- ✅ `requirements.txt` re-encoded to UTF-8, unused `asyncpg` dependency removed
+
+### Next Stage
+
+**Stage 2.3 — Auth Module**: `core/security.py` (Argon2 hashing + JWT creation/verification), Pydantic auth schemas, `api/v1/auth.py` implementing `/auth/register`, `/auth/login`, `/auth/me`.
+
+**Gate condition (unchanged):** Register a user, log in, call `/auth/me` with the returned token successfully.
+
+---
+---
+
+## Entry #008 — Stage 2.2 Verified for Real: Port Collision Root Cause
+
+**Date:** June 2026
+**Stage:** 2 — Backend Foundation
+**Status:** ✅ Complete and verified on the actual development machine
+
+### The Challenge (8)
+
+Entry #007's migration was generated and verified, but only against a temporary test database — not the project's real Docker Postgres on Windows. Running `alembic upgrade head` for real failed with `password authentication failed for user "pyrobot"` — the same symptom mentioned, and never fully explained, back in Entry #005.
+
+### Root Cause — Correcting the Record
+
+The earlier working theory was a client-side SCRAM negotiation issue in `psycopg[binary]` on Windows. That theory was wrong, and it's worth correcting explicitly rather than leaving it standing uncorrected: there were **two separate PostgreSQL servers both bound to port 5432** on the same machine — Docker's container (the intended one) and a native PostgreSQL 17 Windows installation (Windows service `postgresql-x64-17`), left over from before this project, running independently in the background. Depending on which one a given connection reached, Python could be rejected by a real server that had simply never heard of the `pyrobot` role — producing a textbook "wrong password" error despite the `.env` credentials being correct the entire time.
+
+This also retroactively explains the original mystery from Entry #005: `psql` succeeding while Python failed were likely never hitting the same server in the first place.
+
+### How We Found It
+
+- `netstat -ano | findstr :5432` showed two distinct PIDs listening on the same port, not one.
+- Docker's own container log (`docker logs pyrobot-postgres`) showed **no failed-login entry at all** for the rejected attempts — proof those attempts never reached the container, ruling out a real credential or driver problem on Docker's side.
+- `Get-CimInstance Win32_Process` revealed the second PID's real executable: `C:\Program Files\PostgreSQL\17\bin\postgres.exe`. A non-elevated PowerShell session returned blank fields for this and was a dead-end red herring; re-running from an **elevated** session revealed the real path.
+- `Get-Service` (filtered by name, not by PID — the PID-based filter was unreliable) confirmed the registered Windows service `postgresql-x64-17` behind it.
+
+### Decision Made (8)
+
+**Disable, don't uninstall, the native service.**
+`Set-Service -Name "postgresql-x64-17" -StartupType Disabled` stops it from auto-starting on every future boot, while leaving the install itself intact in case it's ever needed for something unrelated to this project. Fully reversible.
+
+### Lessons Learned (8)
+
+- An error message naming the exact thing you expect ("password authentication failed for user `pyrobot`") doesn't guarantee the failure is actually about that — it only proves *some* server rejected those credentials, not which server.
+- When a client-side error and a server-side log disagree about what happened, trust the server log. `docker logs` showing nothing was the single strongest clue in this entire investigation.
+- `Get-CimInstance`/WMI queries can silently return blank fields when run without Administrator rights — indistinguishable from "this information doesn't exist" unless you know to re-run elevated.
+- Wiping the Docker volume and recreating the container (the first fix attempted) didn't fail randomly — it was never going to fix this, since the bug had nothing to do with Docker. Ruling out one cause with a clean test is still useful progress even when it isn't the real one.
+
+### Stage Outcome (8)
+
+- ✅ Native `postgresql-x64-17` service disabled
+- ✅ Port 5432 confirmed single-owner (Docker only) via `netstat`
+- ✅ `alembic upgrade head` succeeded against the real project database
+- ✅ All 5 tables verified via `psql \dt`: `users`, `conversations`, `messages`, `memories`, `alembic_version`
+- ✅ Stage 2.2 (Alembic + migrations) is now genuinely, fully complete
+
+### Next Stage
+
+**Stage 2.3 — Auth Module**: `core/security.py` (Argon2 hashing + JWT creation/verification), Pydantic auth schemas, `api/v1/auth.py` implementing `/auth/register`, `/auth/login`, `/auth/me`.
+
+**Gate condition (unchanged):** Register a user, log in, call `/auth/me` with the returned token successfully.

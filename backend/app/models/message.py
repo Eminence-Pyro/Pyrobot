@@ -33,7 +33,7 @@ class Message(Base, TimestampMixin):
         nullable=False,
     )
 
-    metadata: Mapped[dict | None] = mapped_column(
+    extra_data: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
     )

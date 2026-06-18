@@ -4,8 +4,8 @@ Strategy Pattern: one interface, many implementations.
 To add a new model: create one file + add one line to factory.py.
 """
 from abc import ABC, abstractmethod
-from typing import AsyncIterator
 from dataclasses import dataclass
+from typing import AsyncGenerator
 
 
 @dataclass
@@ -17,7 +17,7 @@ class ChatMessage:
 class AIProvider(ABC):
     """
     All AI providers implement this interface.
-    The rest of the application only talks to this interface —
+    The rest of the application only ever talks to this interface —
     never directly to OpenAI, Anthropic, or Google.
     """
 
@@ -30,9 +30,14 @@ class AIProvider(ABC):
         pass
 
     @abstractmethod
-    async def stream(self, messages: list[ChatMessage]) -> AsyncIterator[str]:
+    def stream(self, messages: list[ChatMessage]) -> AsyncGenerator[str, None]:
         """
         Send messages and yield response chunks as they arrive.
         Use for the chat interface — gives the streaming typewriter effect.
+
+        Declared as a plain def (not async def) so that subclasses can
+        implement it as an async generator function (async def + yield),
+        which Python types as AsyncGenerator[str, None] — not as a coroutine.
+        Both are compatible: the caller uses `async for token in provider.stream(...)`.
         """
         pass

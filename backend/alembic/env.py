@@ -32,15 +32,6 @@ if config.config_file_name is not None:
 # alembic.ini ships with a placeholder URL on purpose - real credentials
 # never belong in a file that's tracked by git. We override it here with
 # the same DATABASE_URL the FASTAPI app reads from .env (already gitignored).
-print("\n=== ALEMBIC DATABASE URL ===")
-print(settings.DATABASE_URL)
-print("===========================\n")
-
-config.set_main_option(
-    "sqlalchemy.url",
-    settings.DATABASE_URL
-)
-
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # add your model's MetaData object here

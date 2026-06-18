@@ -498,8 +498,10 @@ This also retroactively explains the original mystery from Entry #005: `psql` su
 - ✅ All 5 tables verified via `psql \dt`: `users`, `conversations`, `messages`, `memories`, `alembic_version`
 - ✅ Stage 2.2 (Alembic + migrations) is now genuinely, fully complete
 
+**Addendum:** removed a leftover debug `print(settings.DATABASE_URL)` block from `env.py` (added during the live troubleshooting above) plus a redundant duplicate `config.set_main_option(...)` call left behind alongside it. Worth removing on principle, not just tidiness — printing a full `DATABASE_URL` (including the password) to stdout on every Alembic invocation is fine for an interactive terminal but becomes a real exposure the moment migrations ever run inside a CI log. Re-verified `alembic upgrade head` still runs cleanly with no behavior change after the removal.
+ 
 ### Next Stage
-
+ 
 **Stage 2.3 — Auth Module**: `core/security.py` (Argon2 hashing + JWT creation/verification), Pydantic auth schemas, `api/v1/auth.py` implementing `/auth/register`, `/auth/login`, `/auth/me`.
-
+ 
 **Gate condition (unchanged):** Register a user, log in, call `/auth/me` with the returned token successfully.

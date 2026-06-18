@@ -505,3 +505,43 @@ This also retroactively explains the original mystery from Entry #005: `psql` su
 **Stage 2.3 — Auth Module**: `core/security.py` (Argon2 hashing + JWT creation/verification), Pydantic auth schemas, `api/v1/auth.py` implementing `/auth/register`, `/auth/login`, `/auth/me`.
  
 **Gate condition (unchanged):** Register a user, log in, call `/auth/me` with the returned token successfully.
+
+---
+---
+
+## Entry #009 — Stage 2.3: Auth Module
+**Date:** June 17, 2026
+**Stage:** 2.3 — Auth Module
+**Status:** ✅ Complete
+
+### The Challenge
+Stage 2.2 left us with a working database and a `User` model, but no way to actually create an account, prove identity on a later request, or protect a route. The goal was registration, login, and a protected `/me` endpoint — without scattering database queries and security logic across every route handler, since chat and memory will both need this same "who is making this request" check very soon.
+
+### Decisions Made (9)
+1. **Repository → Service → Router layering**, used for real for the first time in this project. `UserRepository` only runs queries; `AuthService` holds the business rules (duplicate checks, password verification, token issuance) and expresses failures as domain exceptions (`EmailAlreadyRegisteredError`, `InvalidCredentialsError`) rather than HTTP codes; `api/v1/auth.py` is a thin translator from those exceptions into the right response. A future "delete my account" feature can call `AuthService` directly instead of re-implementing duplicate-check logic inside another route.
+2. **Argon2 over bcrypt** for password hashing, via `passlib` + `argon2-cffi` — Argon2 is the Password Hashing Competition winner and is memory-hard, resisting GPU/ASIC cracking attempts far better than bcrypt.
+3. **Access token only for V1**, via `python-jose`. Refresh-token rotation is already scaffolded in `config.py` (`JWT_REFRESH_TOKEN_EXPIRE_DAYS`) but deliberately deferred — the Stage 2 gate only requires register → login → `/me`, and refresh-token revocation done properly is its own scoped piece of work.
+4. **Login by email**, matching the original API contract in the Master Document. `username` stays unique and reserved for a future public-facing display use, not authentication.
+
+### Bugs Encountered (9)
+- **Pre-existing, unrelated**: `tests/test_health.py` called `/health` directly, but `health.router` is mounted under the `/api/v1` prefix in `main.py` — the real path was `/api/v1/health`. The route was always correct; only the test's path was wrong. Fixed as a one-line test correction.
+- **Local merge artifact, not a code bug**: after pulling in the new files, `auth.py` ended up nested one level too deep at `api/v1/auth/auth.py` instead of `api/v1/auth.py`. Pylance's `"auth" is unknown import symbol` was the literal, accurate signal that the file wasn't where `main.py` expected — moving it up one level and deleting the empty folder resolved it immediately.
+
+### Lessons Learned (9)
+- An IDE static-analysis error like `"X" is unknown import symbol` is often the most direct signal you'll get that a file genuinely isn't where the code expects — worth checking the literal file path before assuming it's a stale-cache false positive.
+- Splitting "what the database knows" (repository) from "what's allowed to happen" (service) from "what HTTP status that becomes" (router) means each layer is testable independently — the test suite never had to know Argon2 was the specific hashing algorithm underneath.
+
+### Stage Outcome (9)
+- ✅ `core/security.py` — Argon2 hashing + JWT create/decode
+- ✅ `repositories/user_repository.py` + `services/auth_service.py` — Repository → Service pattern, used for the first time
+- ✅ `schemas/auth.py` — `UserCreate`, `UserLogin`, `UserResponse`, `Token`
+- ✅ `api/deps.py` — `get_current_user`, reusable by every future protected route
+- ✅ `api/v1/auth.py` — `POST /register` (201), `POST /login` (200), `GET /me` (200), wired into `main.py`
+- ✅ `tests/test_auth.py` — 4 passing tests: full flow, duplicate email (409), wrong password (401), missing token (401)
+- ✅ Gate condition met: registered a user, logged in, called `/auth/me` with the returned token — verified via automated tests and a manual Swagger UI walkthrough
+- ✅ Pre-existing `test_health.py` path bug fixed as a byproduct
+
+### Next Stage
+**Stage 3 — AI Integration**: `AIProvider` abstract base class, first concrete provider (GPT-4o), streaming endpoint.
+
+**Gate condition:** GPT-4o responds to a real prompt via a curl/terminal test.

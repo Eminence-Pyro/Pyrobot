@@ -282,4 +282,33 @@ pip freeze | python -c "import sys; open('requirements.txt','w',encoding='utf-8'
 
 ---
 
-*Next lessons will be added as we build: JWT access/refresh tokens, the Repository → Service → Router auth flow in practice, and the AI Provider Pattern's first real implementation.*
+## Lesson 015 — JWTs: A Token the Server Doesn't Have to Remember
+
+**The problem**: after login, how does the server know who's making the *next* request, without a database lookup on every single one? The classic answer is a server-side session store — but that means every request needs a database round-trip just to confirm identity, before it even gets to doing what the request actually asked for.
+
+**The JWT approach**: a JSON Web Token is three base64 parts — header, payload, signature — glued with dots. The payload (here, just `{"sub": "<user-id>", "exp": <timestamp>}`) is *readable* by anyone who has the token, but not *forgeable*, because the signature is a cryptographic hash of the payload plus a secret only the server knows (`JWT_SECRET`). Change one character of the payload, and the signature no longer matches — `jose.jwt.decode()` raises immediately.
+
+**Why this means "stateless"**: the server never stores "user X is logged in" anywhere. It just hands out a signed claim, and on every later request, re-verifies that signature instead of looking anything up. The token *is* the proof — that's the whole trick.
+
+**The trade-off this creates**: because the server isn't tracking active tokens, there's no built-in way to forcibly log someone out before their token's `exp` naturally arrives — which is exactly why access tokens are kept short-lived (15 minutes here) and why a *separate* refresh-token system with real revocation exists for anything longer-lived. We're deferring that second half intentionally; it's a different problem than "prove who you are right now."
+
+**Where `sub` comes from**: it's a JWT-spec-standard claim name (short for "subject") — using it instead of a made-up field name like `user_id` means any standard JWT library, in any language, already knows how to read it.
+
+---
+
+## Lesson 016 — Repository → Service → Router: Why the Query Doesn't Live in the Route
+
+**The problem**: the fastest way to write `/register` is to put everything in the route function — check the database, hash the password, insert the row, build the token, return it. It works. It also means the moment a second feature needs "is this email already taken," that logic gets copy-pasted into a different file, and the two copies will eventually disagree.
+
+**The three layers, and what each one is *not* allowed to know**:
+- **Repository** (`UserRepository`) only knows SQL-shaped questions: get this row, insert that row. It has never heard of Argon2, JWTs, or HTTP status codes.
+- **Service** (`AuthService`) knows the business rules — "an email can only be registered once," "a password must verify before you get a token" — but doesn't know it's being called over HTTP at all. It raises plain Python exceptions (`InvalidCredentialsError`) that describe *what* went wrong, not what status code that becomes.
+- **Router** (`api/v1/auth.py`) is the only layer that knows about HTTP. Its whole job is catching the service's exceptions and turning each into the right response (`409`, `401`, etc.).
+
+**Why bother, for something this small**: it isn't really about register/login being complex — it's about what happens next. Chat, memory, and file upload will all need "who is the current user," and they'll get it for free from `api/deps.py`'s `get_current_user`, which itself just calls the repository. None of those future features have to know *how* identity is verified; they just depend on the result.
+
+**A concrete test of whether the split is working**: the test suite in `test_auth.py` never imports `argon2` or `jose` directly — it only talks to the API over HTTP, the same way a real client would. If the hashing algorithm changed entirely tomorrow, none of those tests would need to change at all. That's the actual payoff of the layering, not just tidiness.
+
+---
+
+*Next lessons will be added as we build: the `AIProvider` abstract base class and streaming responses in Stage 3.*

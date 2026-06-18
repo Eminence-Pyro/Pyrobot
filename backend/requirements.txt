@@ -16,6 +16,7 @@ cryptography==48.0.0
 distlib==0.4.2
 distro==1.9.0
 ecdsa==0.19.2
+email-validator==2.3.0
 fastapi==0.115.6
 filelock==3.29.1
 google-ai-generativelanguage==0.6.10

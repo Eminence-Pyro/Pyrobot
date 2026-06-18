@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api.v1 import health  # Import your health module
+from app.api.v1 import health, auth
 
 app = FastAPI(
     title="Pyrobot API",
@@ -31,13 +31,12 @@ async def root():
 
 
 # ── ROUTERS ───────────────────────────────────────────────────
-# Include the clean v1 health router with the global v1 prefix
 app.include_router(health.router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 
 
 # Future integrations:
-# from app.api.v1 import auth, chat, memory, files
-# app.include_router(auth.router,   prefix="/api/v1/auth",   tags=["auth"])
+# from app.api.v1 import chat, memory, files
 # app.include_router(chat.router,   prefix="/api/v1/chat",   tags=["chat"])
 # app.include_router(memory.router, prefix="/api/v1/memory", tags=["memory"])
 # app.include_router(files.router,  prefix="/api/v1/files",  tags=["files"])

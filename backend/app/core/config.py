@@ -20,7 +20,13 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
     GOOGLE_API_KEY: str = ""
-    DEFAULT_AI_MODEL: str = "gpt-4o"
+    GROQ_API_KEY: str = ""
+
+    # Default model used when none is specified in the request body.
+    # This is the PRODUCTION-intended default. For local dev testing
+    # without OpenAI/Anthropic credits, override DEFAULT_AI_MODEL in
+    # your local .env (gitignored) — never change it here.
+    DEFAULT_AI_MODEL: str = "gpt-5.5"
 
     # ── CORS ──────────────────────────────────────────────────
     # Note: Ensure .env value is JSON format: ["http://localhost:3000"]

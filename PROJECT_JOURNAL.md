@@ -591,7 +591,114 @@ The Provider Pattern interface (`AIProvider`, `base.py`, factory) was already de
 - ✅ `tests/test_chat.py` — 5 passing tests (auth guard, generate response, unknown model 400, SSE format, system prompt injection)
 - ✅ Full suite: 11/11 passed
 
-### Next Stage
-**Stage 4 — Frontend Shell**: Next.js setup, design tokens, navigation skeleton, all screens navigate correctly.
+## Entry #011 — Stage 3 Addendum: Dev Provider Validation
+**Date:** June 2026
+**Stage:** 3 — AI Integration (addendum, post-completion)
+**Status:** ✅ Complete
 
-**Gate condition:** All screens navigate correctly in the browser.
+### The Challenge
+Stage 3 was marked complete in Entry #010 on the strength of mocked-provider
+tests and the architecture being correct on paper — but no provider had
+actually been exercised against a real upstream API. No OpenAI or Anthropic
+billing was set up, so the AI chat pipeline was technically untested in a
+live sense. Rather than carry that gap into Stage 4, we stopped to close it
+properly, using free-tier providers as a substitute for paid credentials.
+
+### Decisions Made
+1. **Migrate `GeminiProvider` off `google-generativeai`.** Investigation
+   before writing any code revealed the package was deprecated August 31,
+   2025, in favor of the unified `google-genai` SDK. Continuing to build on
+   a sunset package would have created a problem for a future stage to
+   discover the hard way. Rewrote the provider against `client.aio.models
+   .generate_content` / `.generate_content_stream`.
+2. **Dropped the simulated "chat session" pattern.** The old SDK used
+   `start_chat(history=...)`, which doesn't fit Pyrobot's stateless,
+   full-history-per-request design (Entry #010, Decision 1). The rewrite
+   sends the complete message list as `contents` on every call — matching
+   both Gemini's own current documented pattern and our own architecture.
+   This also incidentally eliminated a latent bug (see below).
+3. **Added `GroqProvider`** as a fourth, permanent provider — not just a
+   test stand-in. Free tier, no billing required, OpenAI-compatible message
+   shape, and genuinely useful long-term (Master Doc roadmap already listed
+   multi-provider support as a goal). Used Groq's native `AsyncGroq` client
+   rather than pointing the OpenAI SDK at a foreign `base_url`, to keep
+   error handling and streaming behavior native instead of assumed.
+4. **Updated all four providers to current-generation models** — every
+   model string registered in `factory.py` was stale (`gpt-4o`,
+   `claude-3-5-sonnet-20241022`, `gemini-1.5-flash`). Verified current model
+   IDs live rather than from memory, since model names move faster than any
+   static knowledge can track:
+   - OpenAI: `gpt-5.5`, `gpt-5.4-mini`
+   - Claude: `claude-sonnet-4-6`, `claude-haiku-4-5-20251001`
+   - Gemini: `gemini-2.5-flash`, `gemini-2.5-flash-lite`
+   - Groq: `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`
+5. **`DEFAULT_AI_MODEL` stays `gpt-5.5` in code**; local dev override happens
+   in the gitignored `.env`, not in the committed default. Keeps the repo's
+   source of truth aligned with production intent while solving the
+   no-credits problem at the environment level.
+6. **Built `scripts/test_streaming.py`** as a permanent diagnostic tool —
+   timestamps each SSE chunk's arrival rather than relying on eyeballing
+   terminal scroll, which is unreliable once a provider streams fast enough
+   (Groq) that delivery looks instantaneous to the human eye even when it
+   isn't.
+
+### Bugs Encountered
+**Latent unpacking risk in the old `GeminiProvider`:** `*prior, last =
+history` would raise `ValueError` on an empty history list. Never
+triggered in practice (no live test had been run against it), but would
+have surfaced eventually. Resolved as a side effect of the stateless
+rewrite rather than patched directly — the line doesn't exist anymore.
+
+**`asyncpg` resurfaced in `requirements.txt`** despite being explicitly
+removed in Entry #007. Almost certainly pulled back in transitively by one
+of today's new packages. Manually uninstalled and removed again — worth
+revisiting if it reappears a third time, as that would suggest a direct
+(not transitive) dependency somewhere worth tracking down.
+
+### Lessons Learned
+- **A billing/quota error from a real provider is a *positive* test
+  signal**, not a failure — it proves the request reached the correct
+  external API with the correct shape. Don't mistake "the provider rejected
+  it" for "our code is broken."
+- **SDK deprecations are silent until something actually imports the
+  code path.** The Gemini provider passed every prior check (it imported
+  cleanly, the architecture was sound, mocked tests passed) while quietly
+  resting on a sunset package. The fix was to check before assuming, not
+  after something broke.
+- **"It looks instant" is not proof of correct streaming behavior.** A
+  timestamped script is a five-minute investment that turns a subjective
+  eyeball check into objective proof — worth keeping as a standing tool,
+  not a one-off.
+- **Free-tier providers are legitimate dev-testing infrastructure**, not
+  just a stopgap — Groq in particular is now a permanent fourth option in
+  the Provider Pattern, proving the abstraction's real value: a new
+  provider took one file and one factory entry, exactly as designed in
+  Section 2.5 of the Master Document.
+
+### Stage Outcome
+- ✅ `gemini_provider.py` fully migrated to `google-genai`, latent bug
+  removed as a side effect
+- ✅ `groq_provider.py` created — fourth provider, free tier, fully working
+- ✅ `factory.py` updated — all four providers on current-generation models
+- ✅ `config.py` / `.env.example` — `GROQ_API_KEY` added, dev-override
+  pattern documented
+- ✅ `scripts/test_streaming.py` — permanent SSE verification tool
+- ✅ Live validation: `gemini-2.5-flash` and `llama-3.3-70b-versatile`
+  both return real responses via `/chat/generate` AND real incremental
+  streaming via `/chat/stream` (verified with timestamped proof, 7 distinct
+  chunks over 1.16s)
+- ✅ `gpt-5.5`, `gpt-5.4-mini`, `claude-sonnet-4-6`,
+  `claude-haiku-4-5-20251001` all correctly route through the factory and
+  fail only at the provider's billing boundary — confirms the Strategy
+  Pattern resolves all four providers correctly
+- ✅ `gpt-4o` correctly returns `Unknown model` — factory failure path
+  intact post-rewrite
+- ✅ `asyncpg` removed (again)
+
+### Next Stage
+**Stage 4 — Frontend Shell**: Next.js design tokens, Zustand stores,
+navigation skeleton, all screens navigate correctly. Conceptual Brief and
+Component Tree already drafted, pending final approval.
+
+**Gate condition (unchanged):** All screens navigate correctly in the
+browser.

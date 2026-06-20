@@ -14,25 +14,31 @@ def get_provider(model_name: str) -> AIProvider:
     Returns an instantiated AIProvider for the given model name.
 
     Example:
-        provider = get_provider("gpt-4o")
+        provider = get_provider("llama-3.3-70b-versatile")
         response = await provider.generate(messages)
     """
     # Imported inside the function so unused SDKs are never loaded at startup.
     from app.services.ai.openai_provider import OpenAIProvider
     from app.services.ai.claude_provider import ClaudeProvider
     from app.services.ai.gemini_provider import GeminiProvider
+    from app.services.ai.groq_provider import GroqProvider
 
-    # Typed as dict[str, Any] so Pylance doesn't complain about the `model`
-    # constructor argument — each concrete provider adds `model` to __init__,
-    # but the abstract base AIProvider doesn't declare it. At runtime this is
-    # always a valid call; the Any annotation tells Pylance to trust us here.
     providers: dict[str, Any] = {
-        "gpt-4o":                     OpenAIProvider,
-        "gpt-4o-mini":                OpenAIProvider,
-        "claude-3-5-sonnet-20241022":  ClaudeProvider,
-        "claude-3-haiku-20240307":     ClaudeProvider,
-        "gemini-1.5-flash":           GeminiProvider,
-        "gemini-1.5-pro":             GeminiProvider,
+        # OpenAI — flagship + lightweight (requires billing)
+        "gpt-5.5":                     OpenAIProvider,
+        "gpt-5.4-mini":                OpenAIProvider,
+
+        # Anthropic Claude — current generation (requires billing)
+        "claude-sonnet-4-6":           ClaudeProvider,
+        "claude-haiku-4-5-20251001":   ClaudeProvider,
+
+        # Google Gemini — Flash tier is free; Pro moved behind billing April 2026
+        "gemini-2.5-flash":            GeminiProvider,
+        "gemini-2.5-flash-lite":       GeminiProvider,
+
+        # Groq — free tier, no card required, OpenAI-compatible shape
+        "llama-3.3-70b-versatile":     GroqProvider,
+        "llama-3.1-8b-instant":        GroqProvider,
     }
 
     provider_class = providers.get(model_name)

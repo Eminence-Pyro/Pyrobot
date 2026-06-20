@@ -340,4 +340,52 @@ pip freeze | python -c "import sys; open('requirements.txt','w',encoding='utf-8'
 
 ---
 
+## Lesson 010 — Repository vs Service: Why We Need Both
+
+A common beginner question is:
+
+"Why not put the database code directly in the router?"
+
+Because routers answer HTTP questions, not business questions.
+
+Consider:
+
+```python
+POST /conversations
+```
+
+The router's job is:
+
+* Validate request
+* Call service
+* Return response
+
+The service's job is:
+
+* Enforce ownership rules
+* Apply business logic
+* Coordinate repositories
+
+The repository's job is:
+
+* Read and write database records
+
+Think of it like a restaurant:
+
+Router = Waiter
+Service = Chef
+Repository = Pantry
+
+The waiter takes the order.
+
+The chef decides how to prepare the meal.
+
+The pantry simply stores ingredients.
+
+Mixing these responsibilities together makes systems harder to test, harder to maintain, and harder to extend.
+
+This separation is one of the most common patterns in professional backend applications because each layer can evolve independently without affecting the others.
+
+---
+
 *Next lessons will be added as we build: Next.js App Router, design token setup, and the Frontend Shell in Stage 4.*

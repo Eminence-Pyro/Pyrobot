@@ -92,7 +92,7 @@ async def test_generate_returns_ai_response(unique_user):
                 "/api/v1/chat/generate",
                 json={
                     "messages": [{"role": "user", "content": "What is the capital of France?"}],
-                    "model": "gpt-4o",
+                    "model": "llama-3.3-70b-versatile",
                 },
                 headers={"Authorization": f"Bearer {token}"},
             )
@@ -100,7 +100,7 @@ async def test_generate_returns_ai_response(unique_user):
     assert resp.status_code == 200
     body = resp.json()
     assert body["content"] == "Paris is the capital of France."
-    assert body["model"] == "gpt-4o"
+    assert body["model"] == "llama-3.3-70b-versatile"
 
 
 @pytest.mark.asyncio
@@ -112,7 +112,7 @@ async def test_generate_unknown_model_returns_400(unique_user):
             "/api/v1/chat/generate",
             json={
                 "messages": [{"role": "user", "content": "Hello"}],
-                "model": "gpt-99-ultra",
+                "model": "llama-3.3-70b-versatile",
             },
             headers={"Authorization": f"Bearer {token}"},
         )

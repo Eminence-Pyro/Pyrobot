@@ -317,14 +317,6 @@ After scaffolding completed on Next.js 16.2, `npm audit` reported 2 moderate vul
 
 - **Mobile device testing via `allowedDevOrigins`**: dev server warns about cross-origin HMR when accessed from phone on local network (e.g., `172.27.49.135`). Revisit when building actual UI screens (Stage 4+), especially Stage 8 (Polish/mobile layout verification). Not needed while only the default boilerplate page exists.
 
-### Next Stage
-
-**Stage 2 — Backend Foundation** (per Entry #003): FastAPI scaffolding, PostgreSQL connection, Alembic migrations, JWT auth with Argon2.
-
-### **Gate condition:** Register a user, log in, call `/auth/me` with token successfully via Postman/curl
-
----
-
 ---
 
 ## Entry #005 — Stage 2: Backend Foundation (In Progress)
@@ -413,21 +405,25 @@ checks pass with the new model layer integrated.
 ### Decisions Made (7)
 
 **Override `sqlalchemy.url` from `env.py`, not `alembic.ini`**
+
 - `alembic.ini` is tracked by git — real database credentials should never live in a tracked file.
 - `env.py` now imports `app.core.config.settings` and calls `config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)`. The same gitignored `.env` the FastAPI app already reads is now the single source of truth for both the app and migrations.
 
 **Import all models in `env.py` before setting `target_metadata`**
+
 - Alembic's autogenerate only "sees" tables registered on `Base.metadata` *at the moment `env.py` runs*. Importing `app.models` (User, Conversation, Message, Memory) is what populates that registry.
 
 ### Bugs Encountered (7)
 
 **`Message.metadata` collided with SQLAlchemy's reserved `Base.metadata`**
+
 - The instant `env.py` tried to import the models, it raised `InvalidRequestError: Attribute name 'metadata' is reserved when using the Declarative API`.
 - Every class inheriting `Base` already owns a `.metadata` attribute (the `MetaData` registry itself) — naming a column the same thing collides with it.
 - Fix: renamed the column attribute to `extra_data` in `backend/app/models/message.py`.
 - This bug existed silently since the model was first written. It never surfaced because nothing imported `app.models` until Alembic needed to.
 
 **`requirements.txt` saved as UTF-16, not UTF-8**
+
 - Root cause: `pip freeze > requirements.txt` run from PowerShell, where `>` redirection defaults to UTF-16LE. Confirmed via `file backend/requirements.txt` reporting "Unicode text, UTF-16."
 - Would have broken `pip install -r requirements.txt` on any Linux target (Railway, CI, Docker) — pip's parser expects UTF-8/ASCII.
 - Fix: re-saved as UTF-8, no BOM. Also removed a stray, unused `asyncpg==0.31.0` pin left over from earlier driver troubleshooting — the project uses `psycopg[binary]` exclusively.
@@ -446,13 +442,6 @@ checks pass with the new model layer integrated.
 - ✅ Migration applied via `alembic upgrade head` — verified all 5 tables exist (`users`, `conversations`, `memories`, `messages`, `alembic_version`)
 - ✅ `requirements.txt` re-encoded to UTF-8, unused `asyncpg` dependency removed
 
-### Next Stage
-
-**Stage 2.3 — Auth Module**: `core/security.py` (Argon2 hashing + JWT creation/verification), Pydantic auth schemas, `api/v1/auth.py` implementing `/auth/register`, `/auth/login`, `/auth/me`.
-
-**Gate condition (unchanged):** Register a user, log in, call `/auth/me` with the returned token successfully.
-
----
 ---
 
 ## Entry #008 — Stage 2.2 Verified for Real: Port Collision Root Cause
@@ -499,42 +488,42 @@ This also retroactively explains the original mystery from Entry #005: `psql` su
 - ✅ Stage 2.2 (Alembic + migrations) is now genuinely, fully complete
 
 **Addendum:** removed a leftover debug `print(settings.DATABASE_URL)` block from `env.py` (added during the live troubleshooting above) plus a redundant duplicate `config.set_main_option(...)` call left behind alongside it. Worth removing on principle, not just tidiness — printing a full `DATABASE_URL` (including the password) to stdout on every Alembic invocation is fine for an interactive terminal but becomes a real exposure the moment migrations ever run inside a CI log. Re-verified `alembic upgrade head` still runs cleanly with no behavior change after the removal.
- 
-### Next Stage
- 
-**Stage 2.3 — Auth Module**: `core/security.py` (Argon2 hashing + JWT creation/verification), Pydantic auth schemas, `api/v1/auth.py` implementing `/auth/register`, `/auth/login`, `/auth/me`.
- 
-**Gate condition (unchanged):** Register a user, log in, call `/auth/me` with the returned token successfully.
 
----
 ---
 
 ## Entry #009 — Stage 2.3: Auth Module
+
 **Date:** June 2026
 **Stage:** 2.3 — Auth Module
 **Status:** ✅ Complete
 
-### The Challenge
+### The Challenge (2.3)
+
 Stage 2.2 left us with a working database and a `User` model, but no way to actually create an account, prove identity on a later request, or protect a route. The goal was registration, login, and a protected `/me` endpoint — without scattering database queries and security logic across every route handler, since chat and memory will both need this same "who is making this request" check very soon.
 
 ### Decisions Made (9)
+
 1. **Repository → Service → Router layering**, used for real for the first time in this project. `UserRepository` only runs queries; `AuthService` holds the business rules (duplicate checks, password verification, token issuance) and expresses failures as domain exceptions (`EmailAlreadyRegisteredError`, `InvalidCredentialsError`) rather than HTTP codes; `api/v1/auth.py` is a thin translator from those exceptions into the right response. A future "delete my account" feature can call `AuthService` directly instead of re-implementing duplicate-check logic inside another route.
+
 2. **Argon2 over bcrypt** for password hashing, via `passlib` + `argon2-cffi` — Argon2 is the Password Hashing Competition winner and is memory-hard, resisting GPU/ASIC cracking attempts far better than bcrypt.
 3. **Access token only for V1**, via `python-jose`. Refresh-token rotation is already scaffolded in `config.py` (`JWT_REFRESH_TOKEN_EXPIRE_DAYS`) but deliberately deferred — the Stage 2 gate only requires register → login → `/me`, and refresh-token revocation done properly is its own scoped piece of work.
 4. **Login by email**, matching the original API contract in the Master Document. `username` stays unique and reserved for a future public-facing display use, not authentication.
 5. **`HTTPBearer` over `OAuth2PasswordBearer` for `get_current_user`**, corrected mid-stage after manual Swagger testing. `OAuth2PasswordBearer` is the right tool for an actual OAuth2 password-grant flow (form-encoded `username`/`password`/`client_id`) — ours is a plain JSON login, so it was the wrong scheme even though it's the one most tutorials default to. `HTTPBearer` just means "read the Authorization header," which is what we're actually doing.
 
 ### Bugs Encountered (9)
+
 - **Pre-existing, unrelated**: `tests/test_health.py` called `/health` directly, but `health.router` is mounted under the `/api/v1` prefix in `main.py` — the real path was `/api/v1/health`. The route was always correct; only the test's path was wrong. Fixed as a one-line test correction.
 - **Local merge artifact, not a code bug**: after pulling in the new files, `auth.py` ended up nested one level too deep at `api/v1/auth/auth.py` instead of `api/v1/auth.py`. Pylance's `"auth" is unknown import symbol` was the literal, accurate signal that the file wasn't where `main.py` expected — moving it up one level and deleting the empty folder resolved it immediately.
 - **Swagger "Authorize" showed a username/password form, not a token field**: caused by `OAuth2PasswordBearer`, which renders Swagger's OAuth2 password-grant UI regardless of what the actual login endpoint accepts. Caught during the manual Stage 2.3 verification pass — swapped to `HTTPBearer(auto_error=False)`, which also required explicitly re-raising `401` ourselves, since `HTTPBearer`'s default behavior on a missing token is `403`, not the `401` our API contract documents.
 
 ### Lessons Learned (9)
+
 - An IDE static-analysis error like `"X" is unknown import symbol` is often the most direct signal you'll get that a file genuinely isn't where the code expects — worth checking the literal file path before assuming it's a stale-cache false positive.
 - Splitting "what the database knows" (repository) from "what's allowed to happen" (service) from "what HTTP status that becomes" (router) means each layer is testable independently — the test suite never had to know Argon2 was the specific hashing algorithm underneath.
 - FastAPI's security classes aren't interchangeable just because they all produce "a token in the Authorization header" — `OAuth2PasswordBearer` carries real OAuth2 password-grant semantics (a specific form shape, a specific default error code) that only matter if your login endpoint actually speaks that protocol. Picking the class that matches your actual flow, rather than the one every tutorial happens to use, avoided building something that merely looked right in code but broke the moment it was clicked through in Swagger.
 
 ### Stage Outcome (9)
+
 - ✅ `core/security.py` — Argon2 hashing + JWT create/decode
 - ✅ `repositories/user_repository.py` + `services/auth_service.py` — Repository → Service pattern, used for the first time
 - ✅ `schemas/auth.py` — `UserCreate`, `UserLogin`, `UserResponse`, `Token`
@@ -544,20 +533,14 @@ Stage 2.2 left us with a working database and a `User` model, but no way to actu
 - ✅ Gate condition met: registered a user, logged in, called `/auth/me` with the returned token — verified via automated tests and a manual Swagger UI walkthrough
 - ✅ Pre-existing `test_health.py` path bug fixed as a byproduct
 
-### Next Stage
-**Stage 3 — AI Integration**: `AIProvider` abstract base class, first concrete provider (GPT-4o), streaming endpoint.
-
-**Gate condition:** GPT-4o responds to a real prompt via a curl/terminal test.
-
----
----
-
 ## Entry #010 — Stage 3: AI Integration
+
 **Date:** June 2026
 **Stage:** 3 — AI Integration
 **Status:** ✅ Complete
 
-### The Challenge
+### The Challenge (10)
+
 The Provider Pattern interface (`AIProvider`, `base.py`, factory) was already designed in Stage 1 and scaffolded in Stage 2, but all three providers had `NotImplementedError` bodies. Stage 3's job was to fill them in, add the streaming chat endpoint, and prove a real AI responds through the full stack — JWT auth → router → service → provider → SSE stream back to the client.
 
 ### Decisions Made (10)
@@ -581,6 +564,7 @@ The Provider Pattern interface (`AIProvider`, `base.py`, factory) was already de
 9. **Gemini's `"model"` role.** Google's SDK uses `"model"` where everyone else uses `"assistant"`. `GeminiProvider` translates at the boundary via `_ROLE_MAP`, so the rest of the codebase never has to know.
 
 ### Stage Outcome (10)
+
 - ✅ `OpenAIProvider.generate()` and `.stream()` fully implemented
 - ✅ `ClaudeProvider` — full implementation with system prompt extraction
 - ✅ `GeminiProvider` — full implementation with role translation
@@ -592,11 +576,13 @@ The Provider Pattern interface (`AIProvider`, `base.py`, factory) was already de
 - ✅ Full suite: 11/11 passed
 
 ## Entry #011 — Stage 3 Addendum: Dev Provider Validation
+
 **Date:** June 2026
 **Stage:** 3 — AI Integration (addendum, post-completion)
 **Status:** ✅ Complete
 
-### The Challenge
+### The Challenge (11)
+
 Stage 3 was marked complete in Entry #010 on the strength of mocked-provider
 tests and the architecture being correct on paper — but no provider had
 actually been exercised against a real upstream API. No OpenAI or Anthropic
@@ -604,7 +590,8 @@ billing was set up, so the AI chat pipeline was technically untested in a
 live sense. Rather than carry that gap into Stage 4, we stopped to close it
 properly, using free-tier providers as a substitute for paid credentials.
 
-### Decisions Made
+### Decisions Made (11)
+
 1. **Migrate `GeminiProvider` off `google-generativeai`.** Investigation
    before writing any code revealed the package was deprecated August 31,
    2025, in favor of the unified `google-genai` SDK. Continuing to build on
@@ -642,7 +629,8 @@ properly, using free-tier providers as a substitute for paid credentials.
    (Groq) that delivery looks instantaneous to the human eye even when it
    isn't.
 
-### Bugs Encountered
+### Bugs Encountered (11)
+
 **Latent unpacking risk in the old `GeminiProvider`:** `*prior, last =
 history` would raise `ValueError` on an empty history list. Never
 triggered in practice (no live test had been run against it), but would
@@ -655,7 +643,8 @@ of today's new packages. Manually uninstalled and removed again — worth
 revisiting if it reappears a third time, as that would suggest a direct
 (not transitive) dependency somewhere worth tracking down.
 
-### Lessons Learned
+### Lessons Learned (11)
+
 - **A billing/quota error from a real provider is a *positive* test
   signal**, not a failure — it proves the request reached the correct
   external API with the correct shape. Don't mistake "the provider rejected
@@ -675,7 +664,8 @@ revisiting if it reappears a third time, as that would suggest a direct
   provider took one file and one factory entry, exactly as designed in
   Section 2.5 of the Master Document.
 
-### Stage Outcome
+### Stage Outcome (11)
+
 - ✅ `gemini_provider.py` fully migrated to `google-genai`, latent bug
   removed as a side effect
 - ✅ `groq_provider.py` created — fourth provider, free tier, fully working
@@ -695,10 +685,118 @@ revisiting if it reappears a third time, as that would suggest a direct
   intact post-rewrite
 - ✅ `asyncpg` removed (again)
 
-### Next Stage
-**Stage 4 — Frontend Shell**: Next.js design tokens, Zustand stores,
-navigation skeleton, all screens navigate correctly. Conceptual Brief and
-Component Tree already drafted, pending final approval.
+## Entry #012 — Stage 4.1: Conversation Persistence
 
-**Gate condition (unchanged):** All screens navigate correctly in the
-browser.
+**Date:** June 2026
+**Stage:** 4.1 — Conversation Persistence
+**Status:** ✅ Complete
+
+### The Challenge (12)
+
+Work on conversation persistence had already begun independently before
+its place in the roadmap was confirmed — surfacing a real conflict
+between two planning documents (Master Document's original Stage 4
+"Frontend Shell" vs. an external `PYROBOT_EXECUTION_ROADMAP.md` putting
+persistence at Stage 4 instead). That had to be reconciled before the
+already-written code could be trusted as "the right next thing," not just
+"a thing that was built."
+
+### Decisions Made (12)
+
+1. **Roadmap reconciliation: persistence-before-frontend wins.** The
+   external roadmap's Stage 4 gate conditions (`POST /conversations
+   works`, `tests pass`) are backend-testable, unlike the original Master
+   Document's Stage 6 gate (`chat history survives page refresh`), which
+   genuinely requires a UI to exist first. Adopted the external roadmap's
+   *content and sequencing*, kept the *existing journal's stage numbers*
+   — no retroactive renumbering of completed work.
+2. **`PYROBOT_EXECUTION_ROADMAP.md` and `PYROBOT_MASTER_DOCUMENT.md` v2.0
+   established as the two canonical planning documents**, both converted
+   to proper `.docx` with stage tracking living exclusively in the
+   Roadmap — eliminates the two-document drift that caused this whole
+   detour in the first place.
+3. **`title` is required, not optional, on `ConversationCreate`** —
+   reversed from an earlier draft decision once `models/conversation.py`
+   was actually seen: the live ORM column is `nullable=False`. The
+   original Master Document's SQL schema (which suggested nullable) was
+   written in Stage 1 as up-front design and never reconciled against
+   what Stage 2.1 actually migrated. Auto-generated titles from a first
+   message remain the intended end state — revisit in Stage 4.2, once a
+   first message actually exists to generate one from.
+4. **`model` / `is_starred` dropped from `ConversationResponse`** — same
+   root cause; these columns don't exist on the live model at all. Not
+   adding a migration for them now; tracked as backlog, not built ahead
+   of need.
+5. **Ownership enforced at the SQL layer, not just the service layer** —
+   `ConversationRepository.get()` now filters by `user_id` directly in
+   the query (defense in depth), matching Master Doc §3.4's documented
+   pattern. A non-owned conversation and a nonexistent one are now
+   indistinguishable at every layer, by design (404-for-both).
+6. **Tests follow `test_auth.py`'s established pattern exactly** — inline
+   `AsyncClient(transport=ASGITransport(app=app), ...)` per test, no
+   shared `client` fixture, since none exists anywhere in this project.
+
+### Bugs Encountered (12)
+
+**Pylance `EllipsisType` errors on all three router functions.** Caused
+by `current_user: Annotated[User, Depends(...)] = None` (and later
+`= ...`) — both were attempts to satisfy Python's "no required parameter
+after a defaulted one" rule, applied to the wrong parameter. Root cause:
+mixing `Annotated`-style dependencies (no literal default) with
+old-style `session=Depends(get_db)` (a real default) in the same
+signature. Fixed by moving `session` into the same `Annotated` style via
+a shared `DbSession` type alias — neither parameter carries a literal
+default anymore, so ordering stops mattering and nothing needs faking.
+
+**Test suite assumed a `client` fixture that was never written.**
+`fixture 'client' not found` on every test, at setup, before any test
+logic ran. Root cause: assumed a shared fixture pattern without checking
+`test_auth.py` first. Resolved by matching the real, working pattern
+exactly instead of inventing a parallel convention.
+
+**Test registration payload didn't match the real schema.** Sent
+`{"name", "email", "password"}`; the actual required shape (confirmed via
+`test_auth.py`'s fixture) is `{"email", "username", "password"}` — no
+`name` field exists. Would have produced a `422` on every test even after
+the fixture bug was fixed. Caught by reading the real file instead of
+assuming the payload shape.
+
+### Lessons Learned (12)
+
+- **When a planning document and a live model disagree, the model is
+  always right** — it's what Alembic actually migrated, regardless of
+  what an earlier design doc said. This is the second time in this stage
+  alone that "the docs say X" turned out to be stale against real code
+  (Entry #011 had the same pattern with deprecated SDKs).
+- **Test files need the same ground-truth discipline as production
+  code.** A test fixture or payload shape that "should" be right is just
+  as capable of being wrong as a hand-written endpoint — and a wrong test
+  fails *before* it can tell you anything about the code it was meant to
+  verify, wasting a full round trip.
+- **An existing passing test file is the single best source of truth for
+  "how does this project actually test things"** — better than a style
+  guide, better than memory, better than assumption. `test_auth.py`
+  resolved two separate bugs the instant it was actually read.
+
+### Stage Outcome (12)
+
+- ✅ `conversation_repository.py`, `conversation_service.py`,
+  `api/v1/conversations.py`, `schemas/conversation.py` — all implemented,
+  reviewed, and corrected against the real ORM model
+- ✅ `test_conversations.py` — 7/7 passing
+- ✅ Manual Stage Gate walkthrough completed via Swagger UI
+  (`/docs`) — create, list (correct ordering), get-by-id, 404 on
+  nonexistent, 404 on not-owned, 401 unauthenticated
+- ✅ `PYROBOT_EXECUTION_ROADMAP.md` and `PYROBOT_MASTER_DOCUMENT.md` v2.0
+  established as canonical, reconciled planning documents
+
+### Next Stage
+
+**Stage 4.2 — Message Persistence**: message repository/service/endpoints,
+saving both user and AI messages, touching `conversation.updated_at` on
+each new message — likely the first real case in this project for moving
+a commit boundary up to the service layer (per `user_repository.py`'s own
+documented guidance: multiple writes that must succeed or fail together).
+
+**Gate condition:** user and AI messages saved, message history
+retrievable, database records verified, tests pass.

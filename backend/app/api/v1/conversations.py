@@ -2,6 +2,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
@@ -16,6 +17,14 @@ from app.services.conversation_service import (
 
 router = APIRouter()
 
+# Neither alias carries a literal Python default — Depends() lives inside
+# Annotated's metadata, not as `= Depends(...)`. That's what actually
+# fixes the Pylance errors: there's no longer anything for the "non-default
+# argument follows default argument" rule to trip on, so no fake default
+# (`= None`, `= ...`) is needed on any parameter, in any order.
+DbSession = Annotated[AsyncSession, Depends(get_db)]
+CurrentUser = Annotated[User, Depends(get_current_user)]
+
 
 @router.post(
     "",
@@ -24,11 +33,8 @@ router = APIRouter()
 )
 async def create_conversation(
     payload: ConversationCreate,
-    session=Depends(get_db),
-    current_user: Annotated[
-        User,
-        Depends(get_current_user),
-    ] = None,
+    session: DbSession,
+    current_user: CurrentUser,
 ):
     service = ConversationService(session)
 
@@ -43,11 +49,8 @@ async def create_conversation(
     response_model=list[ConversationResponse],
 )
 async def list_conversations(
-    session=Depends(get_db),
-    current_user: Annotated[
-        User,
-        Depends(get_current_user),
-    ] = None,
+    session: DbSession,
+    current_user: CurrentUser,
 ):
     service = ConversationService(session)
 
@@ -62,11 +65,8 @@ async def list_conversations(
 )
 async def get_conversation(
     conversation_id: UUID,
-    session=Depends(get_db),
-    current_user: Annotated[
-        User,
-        Depends(get_current_user),
-    ] = None,
+    session: DbSession,
+    current_user: CurrentUser,
 ):
     service = ConversationService(session)
 

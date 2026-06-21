@@ -29,17 +29,10 @@ class ConversationService:
         conversation_id: UUID,
         user_id: UUID,
     ) -> Conversation | None:
-        conversation = await self.repository.get(
-            conversation_id
+        return await self.repository.get(
+            conversation_id,
+            user_id=user_id,
         )
-
-        if not conversation:
-            return None
-
-        if conversation.user_id != user_id:
-            return None
-
-        return conversation
 
     async def list_conversations(
         self,

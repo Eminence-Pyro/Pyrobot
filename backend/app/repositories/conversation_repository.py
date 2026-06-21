@@ -30,10 +30,13 @@ class ConversationRepository:
     async def get(
         self,
         conversation_id: UUID,
+        *,
+        user_id: UUID,
     ) -> Conversation | None:
         result = await self.session.execute(
             select(Conversation).where(
-                Conversation.id == conversation_id
+                Conversation.id == conversation_id,
+                Conversation.user_id == user_id,
             )
         )
 
@@ -46,7 +49,7 @@ class ConversationRepository:
         result = await self.session.execute(
             select(Conversation)
             .where(Conversation.user_id == user_id)
-            .order_by(Conversation.created_at.desc())
+            .order_by(Conversation.updated_at.desc())
         )
 
         return list(result.scalars().all())

@@ -6,7 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.api.v1 import health, auth, chat, conversations, messages
-from app.api.v1 import messages
 
 app = FastAPI(
     title="Pyrobot API",

@@ -790,13 +790,186 @@ assuming the payload shape.
 - ✅ `PYROBOT_EXECUTION_ROADMAP.md` and `PYROBOT_MASTER_DOCUMENT.md` v2.0
   established as canonical, reconciled planning documents
 
+## Entry #013 — Stage 4.2: Message Persistence
+
+**Date:** June 2026
+**Stage:** 4.2 — Message Persistence
+**Status:** ✅ Complete
+
+### The Challenge (13)
+
+Unlike Stage 4.1's single-resource CRUD, sending a message is an
+orchestration problem: save the user's message, call an external AI
+provider (a step that can fail), save the reply, and update the parent
+conversation's activity timestamp — four operations that need to succeed
+or fail together as one unit, not independently.
+
+### Decisions Made (13)
+1. **Commit boundary moved to the service layer**, exactly as
+   `user_repository.py`'s own comment anticipated back in Stage 2.3:
+   *"if a future feature needs several writes to succeed or fail
+   together, that's the signal to move the commit boundary up."*
+   `MessageRepository` gained a method deliberately named `stage()`, not
+   `create()` — different name on purpose, so it can never be confused
+   with `ConversationRepository.create()`, which *does* commit. `stage()`
+   only does `session.add()`. `MessageService.send_message()` owns the
+   single commit point, after both messages exist and the conversation
+   timestamp is updated.
+2. **`conversation.updated_at` is touched explicitly**, not left to
+   `TimestampMixin`'s `onupdate=func.now()` alone — that only fires when
+   a column on the `Conversation` row itself changes during flush. Adding
+   child `Message` rows never touches the parent row, so without an
+   explicit `conversation.updated_at = datetime.now(timezone.utc)` line,
+   Stage 4.1's "most recently active first" ordering would have silently
+   stopped working the moment this stage shipped.
+3. **Endpoints nested under the conversation**
+   (`POST/GET .../conversations/{id}/messages`), accepting only the new
+   message rather than full history — the conversation already identifies
+   the thread. Stage 3's `/chat/stream` and `/chat/generate` are
+   deliberately left untouched as separate, stateless, conversation-
+   agnostic passthroughs.
+4. **`POST .../messages` returns both the user and assistant message** in
+   one response — confirms the full round trip without a second request.
+5. **Non-streaming first, by design** — mirrors Stage 3's own precedent
+   (Entry #010: built `/chat/generate` because it's easier to test against
+   a complete string). Streaming + persistence together is a deliberate
+   fast-follow, not bundled into this stage, so a bug in one isn't
+   confused for a bug in the other.
+6. **Stage 4.2 is intentionally single-turn.** `ChatService.generate()`
+   already prepends the system prompt itself, so `MessageService` sends
+   only the new user content — no prior messages in the thread are passed
+   as context yet. This is the documented gate boundary between 4.2
+   ("messages saved") and 4.3 ("AI receives reconstructed history"), not
+   an oversight.
+7. **Tests call the real Groq API rather than mocking the provider** —
+   flagged as a deliberate deviation from Entry #010's documented
+   mocked-provider convention for chat tests, since `test_chat.py` wasn't
+   available to match against. Chosen because this stage's actual claim
+   to prove — a real saved reply, not a stubbed string — benefits from a
+   real round trip, at zero cost via Groq's free tier.
+
+### Bugs Encountered
+**Pylance: `Message` not assignable to `MessageResponse`.** The router
+was passing raw SQLAlchemy ORM objects directly into
+`MessageExchangeResponse`'s fields. This actually works at runtime
+(`MessageResponse.model_config = {"from_attributes": True}` lets Pydantic
+coerce arbitrary objects), but Pylance can't see through that runtime
+behavior — it only checks declared types, which were genuinely mismatched.
+Fixed by converting explicitly with `MessageResponse.model_validate(...)`
+in the router, rather than suppressing the warning. Unlike the
+`config.py` `# type: ignore[call-arg]` case (truly unavoidable),
+this had a clean, fully type-safe fix — so that's what shipped, not
+another suppression comment.
+
+**`main.py` imported `from backend.app.api.v1 import messages`** —
+wrong path, broke test collection entirely (`ModuleNotFoundError: No
+module named 'backend'`). Root cause: when running from inside
+`backend/` (which the venv and every documented command does), Python's
+import root *is* `backend/` itself — so the package is `app`, never
+`backend.app`. Every other router import in the file correctly used
+`app.api.v1`; this one line didn't match the established pattern.
+Corrected to `from app.api.v1 import messages`.
+
+### Lessons Learned
+- **Explicit conversion beats implicit framework magic the moment a
+  static type checker can't see through the magic.** Pydantic's
+  `from_attributes` coercion is genuinely useful, but relying on it
+  silently costs real type-safety value at every call site — worth
+  spending one extra line to make the conversion visible in the code
+  itself.
+- **Import paths are relative to where the process actually runs, not
+  to the project's folder structure on disk.** `backend/` is a real
+  directory, but it is never part of the Python module path once you're
+  running from inside it — a subtle distinction that's easy to get wrong
+  exactly once and then copy-paste forward.
+- **A linter flagging intentional repetition isn't a bug to fix** —
+  `markdownlint`'s MD024 complaining about every journal entry reusing
+  `### Decisions Made` / `### Lessons Learned` is the same category of
+  false positive already logged for `pydantic-settings` in this journal:
+  a tool correctly following its own rule, on a case the rule wasn't
+  meant to catch.
+
+### Stage Outcome
+- ✅ `message_repository.py`, `message_service.py`, `api/v1/messages.py`,
+  `schemas/message.py` — implemented, reviewed, corrected
+- ✅ `test_messages.py` — 7/7 passing, including a real round trip through
+  Groq (not mocked)
+- ✅ Manual Stage Gate walkthrough completed via Swagger UI
+- ✅ Conversation `updated_at` correctly bumps on new messages — verified
+  by automated test, protecting Stage 4.1's list-ordering guarantee
+
+## Entry #014 — Stage 4.3: Context Reconstruction
+**Date:** June 2026
+**Stage:** 4.3 — Context Reconstruction
+**Status:** ✅ Complete
+
+### The Challenge
+Stage 4.2 deliberately sent the AI provider only the newest message,
+even though full conversation history was already being saved correctly.
+The data existed; it just wasn't being read back. This stage's entire
+job was closing that one gap — not building new infrastructure, wiring
+two already-built pieces (`MessageRepository.list_for_conversation()`
+and `ChatService.generate()`) together for the first time.
+
+### Decisions Made
+1. **History is capped at the most recent 20 messages**, not sent
+   unbounded — directly implementing Master Document §2.6 Layer 4's
+   original spec ("Conversation History — **last N messages**"), which
+   Stage 4.2 hadn't yet reached. Unbounded history would grow every
+   provider's token cost and latency linearly with conversation age;
+   smarter summarization of older context is real future work, not a V1
+   requirement.
+2. **History is loaded BEFORE the new user message is staged**, not
+   after. `MessageRepository.stage()` only adds to the session, never
+   flushes — loading history first removes any ambiguity about whether
+   the brand-new message could leak into its own "prior" context via
+   SQLAlchemy's autoflush timing. One explicit boundary, not an implicit
+   one.
+3. **No new endpoint, schema, or repository method.** `GET
+   .../conversations/{id}/messages` (built in Stage 4.2) already
+   satisfies "reload a conversation correctly" — this gate item was
+   met a stage early as a side effect of 4.2's design, not separately
+   planned. Only `message_service.py` was touched.
+4. **Proof strategy: an unguessable nonce, not a vibe check.** The test
+   plants a fabricated word in turn one and asks for it back in turn two.
+   An LLM cannot produce that exact string from training data or chance —
+   the only path to it appearing in the reply is genuine context-passing.
+   Far stronger evidence than asserting the response merely "looks
+   contextual."
+
+### Bugs Encountered
+None. First stage in this project's history with zero corrections needed
+between the conceptual brief and the passing test run — likely because
+both pieces being wired together (`MessageRepository`,
+`ChatService.generate()`) were already fully known, tested, and verified
+in prior stages, with no new ground-truth files required.
+
+### Lessons Learned
+- **An unguessable-nonce test is a meaningfully stronger proof than a
+  plausibility check** for anything involving an LLM — "the AI
+  remembered something specific it could not have known any other way"
+  closes off the possibility of a test passing for the wrong reason
+  (e.g., the model coincidentally producing contextually-appropriate
+  text without actually receiving the prior turn).
+- **Designing one stage's output to already satisfy a later stage's gate
+  is a sign the architecture is composing correctly** — Stage 4.2's
+  `GET` endpoint quietly finishing part of 4.3's job is a good outcome,
+  not a coincidence to be suspicious of.
+
+### Stage Outcome
+- ✅ `message_service.py` updated — history loaded and capped before
+  each AI call
+- ✅ `test_context_reconstruction.py` — 2/2 passing, including the
+  nonce-word multi-turn proof
+- ✅ `test_messages.py` re-run alongside — 7/7 still passing, confirming
+  Stage 4.2 behavior is fully backward-compatible with the Stage 4.3
+  change
+- ✅ 9/9 total across both files
+
 ### Next Stage
+**Stage 4.4 — Memory System**: persistent key-value user memory (Layer 2
+of Master Document §2.6's prompt system), influencing AI responses
+across conversations, not just within one.
 
-**Stage 4.2 — Message Persistence**: message repository/service/endpoints,
-saving both user and AI messages, touching `conversation.updated_at` on
-each new message — likely the first real case in this project for moving
-a commit boundary up to the service layer (per `user_repository.py`'s own
-documented guidance: multiple writes that must succeed or fail together).
-
-**Gate condition:** user and AI messages saved, message history
-retrievable, database records verified, tests pass.
+**Gate condition:** memory can be stored, memory can be retrieved,
+memory is linked to users, memory influences responses.

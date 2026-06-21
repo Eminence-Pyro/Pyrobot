@@ -966,10 +966,113 @@ in prior stages, with no new ground-truth files required.
   change
 - ✅ 9/9 total across both files
 
-### Next Stage
-**Stage 4.4 — Memory System**: persistent key-value user memory (Layer 2
-of Master Document §2.6's prompt system), influencing AI responses
-across conversations, not just within one.
+## Entry #015 — Stage 4.4: Memory System (Stage 4 Complete)
+**Date:** June 2026
+**Stage:** 4.4 — Memory System
+**Status:** ✅ Complete — closes Stage 4 in full
 
-**Gate condition:** memory can be stored, memory can be retrieved,
-memory is linked to users, memory influences responses.
+### The Challenge
+Wire persistent, per-user key-value memory into the AI pipeline, fulfilling
+Master Document §2.6's Layers 2–3 ("User Profile" / "Relevant Memory
+Snippets") for the first time — until now, every system prompt was a
+static string regardless of who was asking.
+
+### Decisions Made
+1. **`UNIQUE(user_id, key)` added via a real migration before any service
+   code was written.** Investigating `models/memory.py` against the
+   original docx's schema surfaced a genuine gap: the actual applied
+   migration (`92aa08f433c4_initial_schema.py`) created `key` as a plain
+   *non-unique* index — `unique=False`, explicitly. The original design's
+   `UNIQUE(user_id, key)` constraint had been designed but never actually
+   migrated. Fixed at the schema layer (migration
+   `6351e1420b8a`), not papered over in application code, while the
+   table was still empty — the cheapest possible moment to correct it.
+2. **`MemoryRepository.upsert()` uses Postgres's native
+   `INSERT ... ON CONFLICT DO UPDATE`**, not a check-then-write pattern —
+   atomic by construction, immune to a race between two simultaneous
+   writes to the same key. Commits directly in the repository (one
+   standalone operation, no other repository call sharing its
+   transaction), per the same rule `user_repository.py` established back
+   in Stage 2.3.
+3. **`extra_context` folds into the single existing system message**,
+   never added as a second one. Re-reading `gemini_provider.py` before
+   writing the integration surfaced that its `_build_contents()`
+   overwrites `system_instruction` on the *last* system-role message it
+   sees — a second system message would have silently discarded either
+   Pyrobot's base personality or the injected memory, depending on
+   message order, with no error raised anywhere. Caught proactively, not
+   after a silent failure in production.
+4. **`category` dropped from the API contract** — same missing-field
+   story as `Conversation.model`/`is_starred` in Stage 4.1; the live
+   model never had it.
+5. **`value` is a JSON object (`dict`), not a plain string** — matches
+   the real `JSONB` column type; the original docx's example payload
+   (a bare string) would now mismatch the declared schema.
+6. **`build_context_string()` returns `None` when a user has no stored
+   memory**, rather than an empty string — callers skip injection
+   entirely instead of sending a meaningless context block to the
+   provider on every single request.
+
+### Bugs Encountered
+**Missing unique constraint, confirmed via the real migration file** —
+see Decision 1. Significant beyond a cosmetic gap: writing
+`get_by_key()` with this project's normal `.scalar_one_or_none()`
+pattern would have *crashed* (`MultipleResultsFound`) the instant two
+rows existed for one key, rather than silently returning wrong data.
+
+**`test_chat.py::test_generate_unknown_model_returns_400` failed during
+this stage's full-suite regression pass** — but its root cause predates
+Stage 4.4 entirely. The test used `llama-3.3-70b-versatile` as an
+example of an *unregistered* model; that was true in Stage 3 (Entry
+#010) and became false the moment the Stage 3 Addendum (Entry #011)
+registered Groq. Nothing in Stage 4 touched `factory.py` — this was a
+stale test fixture, invisible to every per-stage test run since Stage 3,
+only surfaced because this was the first time the *entire* suite ran
+together. Fixed by replacing the fixture with a string no real provider
+would ever register (`"definitely-not-a-real-model-xyz"`), making the
+assumption structurally durable instead of currently-true-by-coincidence.
+
+### Lessons Learned
+- **A full regression pass earns its cost the moment it catches something
+  per-stage testing structurally cannot** — every individual stage's
+  tests had passed in isolation the entire time; only running everything
+  together exposed a real cross-stage collision between Entry #011 and
+  Stage 4.4's test suite.
+- **"This value doesn't exist" test fixtures need to be impossible to
+  become true, not just currently true** — the same principle this
+  project already applies to schemas (verify the live migration, not the
+  design doc) applies equally to test data referencing things that can
+  change out from under a test, like a provider's registered model list.
+- **Re-reading a previously-correct file before extending it is cheap
+  insurance.** `gemini_provider.py` was fully correct and fully tested in
+  Stage 3 — but Stage 4.4 changed *how* it would be called (potentially
+  multiple system messages), which only a re-read, not a memory of past
+  correctness, could catch.
+
+### Stage Outcome
+- ✅ Migration `6351e1420b8a` — `UNIQUE(user_id, key)` enforced at the DB
+  layer
+- ✅ `memory_repository.py`, `memory_service.py`, `api/v1/memory.py`,
+  `schemas/memory.py` — implemented and tested
+- ✅ `chat_service.py` extended with `extra_context` (backward-compatible;
+  Stage 3's `/chat/generate` and `/chat/stream` unaffected)
+- ✅ `message_service.py` now loads and injects memory into every AI call
+- ✅ `test_memory.py` — 7/7 passing, including direct proof the unique
+  constraint prevents duplication and that memory genuinely influences AI
+  responses (unguessable-nonce strategy, same rigor as Stage 4.3)
+- ✅ `test_chat.py` stale-fixture bug found and fixed during regression
+- ✅ **Full suite: 34/34 passing, simultaneously, for the first time**
+
+### Stage 4 — Closed
+All four substages (Conversation Persistence, Message Persistence,
+Context Reconstruction, Memory System) complete and verified together,
+not just individually. Pyrobot's backend now has a fully working,
+multi-provider, persistent, context-aware, memory-influenced chat
+pipeline — the entire foundation Stage 5's frontend will be built
+against.
+
+### Next Stage
+**Stage 5.1 — Frontend Shell**: Next.js design tokens, ThemeProvider,
+Zustand stores, navigation skeleton, route groups, screen shells.
+
+**Gate condition:** all screens navigate correctly in the browser.

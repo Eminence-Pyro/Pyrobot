@@ -112,11 +112,19 @@ async def test_generate_unknown_model_returns_400(unique_user):
             "/api/v1/chat/generate",
             json={
                 "messages": [{"role": "user", "content": "Hello"}],
-                "model": "llama-3.3-70b-versatile",
+                # Deliberately not a real model name from any provider,
+                # past or future — using a plausible-looking-but-currently-
+                # unregistered string (e.g. an old model name) is exactly
+                # what broke here: llama-3.3-70b-versatile was a valid
+                # "doesn't exist" example in Stage 3, then became real the
+                # moment Groq was added in the Stage 3 Addendum. A string
+                # no real provider would ever name a model can't go stale
+                # the same way.
+                "model": "definitely-not-a-real-model-xyz",
             },
             headers={"Authorization": f"Bearer {token}"},
         )
-    assert resp.status_code == 400
+        assert resp.status_code == 400
 
 
 @pytest.mark.asyncio

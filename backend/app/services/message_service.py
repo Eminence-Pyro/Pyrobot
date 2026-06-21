@@ -11,6 +11,7 @@ truncation/summarization is a real future improvement, not needed for V1.
 """
 from datetime import datetime, timezone
 from uuid import UUID
+from app.services.memory_service import MemoryService
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -37,7 +38,7 @@ class MessageService:
         self.session = session
         self.conversation_repo = ConversationRepository(session)
         self.message_repo = MessageRepository(session)
-
+        self.memory_service = MemoryService(session)
     async def send_message(
         self,
         *,
@@ -85,9 +86,14 @@ class MessageService:
             content=content,
         )
 
+        memory_context = await self.memory_service.build_context_string(
+            user_id=user_id
+        )
+
         chat_service = ChatService(model=model)
         reply_content = await chat_service.generate(
-            history + [{"role": "user", "content": content}]
+            history + [{"role": "user", "content": content}],
+            extra_context=memory_context,
         )
 
         assistant_message = self.message_repo.stage(

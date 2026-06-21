@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api.v1 import health, auth, chat, conversations, messages
+from app.api.v1 import health, auth, chat, conversations, messages, memory  
 
 app = FastAPI(
     title="Pyrobot API",
@@ -36,6 +36,7 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
 app.include_router(conversations.router, prefix="/api/v1/conversations", tags=["conversations"])
 app.include_router(messages.router, prefix="/api/v1/conversations", tags=["messages"])
+app.include_router(memory.router, prefix="/api/v1/memory", tags=["memory"])
 
 # Future integrations:
 # from app.api.v1 import chat, memory, files

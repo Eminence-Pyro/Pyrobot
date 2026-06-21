@@ -29,24 +29,36 @@ class ChatService:
         self.model = model
         self.provider = get_provider(model)
 
-    def _build_messages(self, history: list[dict]) -> list[ChatMessage]:
+    def _build_messages(
+        self, history: list[dict], *, extra_context: str | None = None
+    ) -> list[ChatMessage]:
         """
-        Prepend the system prompt to whatever conversation history
-        the router passed in. Each item in `history` is a dict with
-        "role" and "content" keys — the same shape the API contract specifies.
+        Prepend the system prompt to whatever conversation history the
+        router passed in. `extra_context` (e.g. user memory) is folded into
+        this SAME system message rather than added as a second system-role
+        entry — Gemini's provider overwrites system_instruction on the LAST
+        system message it sees (see gemini_provider.py), so a second system
+        message would silently discard either the base personality or the
+        injected context depending on order. One message, always.
         """
-        messages = [ChatMessage(role="system", content=SYSTEM_PROMPT)]
+        system_content = SYSTEM_PROMPT
+        if extra_context:
+            system_content = f"{SYSTEM_PROMPT}\n\n{extra_context}"
+
+        messages = [ChatMessage(role="system", content=system_content)]
         for turn in history:
             messages.append(ChatMessage(role=turn["role"], content=turn["content"]))
         return messages
 
-    async def generate(self, history: list[dict]) -> str:
-        """Returns the complete AI response as a string. Used for non-streaming calls."""
-        messages = self._build_messages(history)
+    async def generate(
+        self, history: list[dict], *, extra_context: str | None = None
+    ) -> str:
+        messages = self._build_messages(history, extra_context=extra_context)
         return await self.provider.generate(messages)
 
-    async def stream(self, history: list[dict]) -> AsyncIterator[str]:
-        """Yields AI response tokens as they arrive. Used for the streaming chat endpoint."""
-        messages = self._build_messages(history)
+    async def stream(
+        self, history: list[dict], *, extra_context: str | None = None
+    ) -> AsyncIterator[str]:
+        messages = self._build_messages(history, extra_context=extra_context)
         async for token in self.provider.stream(messages):
             yield token

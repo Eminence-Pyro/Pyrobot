@@ -340,52 +340,253 @@ pip freeze | python -c "import sys; open('requirements.txt','w',encoding='utf-8'
 
 ---
 
-## Lesson 010 — Repository vs Service: Why We Need Both
+---
 
-A common beginner question is:
+## Lesson 019 — Repository vs Service: The Commit Boundary Decision
 
-"Why not put the database code directly in the router?"
+Every repository in Pyrobot has to answer one question: does it commit
+its own transaction, or does something else do that?
 
-Because routers answer HTTP questions, not business questions.
+**The simple rule**, established in `user_repository.py` and documented
+in its own comment:
 
-Consider:
+> *"Commits here, not in the service layer: registration is a single
+> insert with no other repository calls that need to share its
+> transaction. If a future feature needs several writes to succeed or fail
+> together, that's the signal to move the commit boundary up."*
 
-```python
-POST /conversations
-```
+**Stage 4.1 proved the rule easy**: creating a conversation is one
+insert. `ConversationRepository.create()` commits itself. Simple.
 
-The router's job is:
+**Stage 4.2 proved why the rule exists**: sending a message is
+*four* operations — stage the user's message, call the AI provider,
+stage the assistant's reply, touch `conversation.updated_at`. If any
+one of these fails, the others shouldn't persist.
 
-* Validate request
-* Call service
-* Return response
+Imagine the AI provider throws a quota error on step 3. If the user's
+message had already been committed in step 1, it's now sitting in the
+database permanently — unanswered, with no way for the user to know
+what happened. Better to let the whole thing fail atomically and ask
+the user to resend.
 
-The service's job is:
+**The fix**: `MessageRepository.stage()` does *only* `session.add()`,
+no commit. `MessageService.send_message()` owns the single commit point
+at the very end, after all four operations have succeeded. If step 3
+throws, SQLAlchemy's session closes (via `get_db`'s `finally` block) and
+implicitly rolls back — the user's message and the failure disappear
+together.
 
-* Enforce ownership rules
-* Apply business logic
-* Coordinate repositories
+**The naming deliberateness**: the method was called `stage()`, not
+`create()`. One repository commits, the other doesn't — giving them the
+same method name would be exactly the kind of subtle inconsistency that
+causes a bug six months later when someone copies the wrong pattern.
 
-The repository's job is:
-
-* Read and write database records
-
-Think of it like a restaurant:
-
-Router = Waiter
-Service = Chef
-Repository = Pantry
-
-The waiter takes the order.
-
-The chef decides how to prepare the meal.
-
-The pantry simply stores ingredients.
-
-Mixing these responsibilities together makes systems harder to test, harder to maintain, and harder to extend.
-
-This separation is one of the most common patterns in professional backend applications because each layer can evolve independently without affecting the others.
+**Analogy**: it's the difference between paying for each course of a
+meal individually, or running a tab and paying once at the end. A tab
+means if you leave early (the AI call fails), you owe nothing yet.
+Paying per course means the kitchen already has your money for the
+entree when you discover there's no dessert.
 
 ---
 
-*Next lessons will be added as we build: Next.js App Router, design token setup, and the Frontend Shell in Stage 4.*
+## Lesson 020 — `onupdate` Doesn't Do What You Think It Does (for Child Rows)
+
+`TimestampMixin` gives every model `updated_at` with
+`onupdate=func.now()`. This sounds like "whenever this record
+changes, update the timestamp automatically."
+
+It's subtler than that.
+
+`onupdate` fires when SQLAlchemy flushes a change to a *column on that
+specific row*. It does **not** fire when a *child row in a related table*
+is inserted. Adding a new `Message` row doesn't change the parent
+`Conversation` row at all from Postgres's perspective — so
+`conversation.updated_at` stays frozen at creation time forever,
+regardless of how many messages are sent.
+
+This matters because Stage 4.1 ordered conversations by `updated_at
+DESC` — "most recently active first." Without an explicit update in
+Stage 4.2's `send_message()`, a two-year-old conversation you just
+replied to would stay buried at the bottom of the list behind one you
+created yesterday but never used. Not a crash, not a visible error — just
+quietly wrong behavior that would take a real user to notice, not a test.
+
+**The fix**: `conversation.updated_at = datetime.now(timezone.utc)` set
+explicitly in `MessageService.send_message()`, before the commit. One
+line, tested directly by `test_sending_message_updates_conversation_timestamp`.
+
+**The lesson**: framework magic that "automatically" handles something
+usually has a scope that's narrower than you assume. Read the actual
+documentation for what triggers it, rather than inferring from what the
+name sounds like. When in doubt, be explicit — one line of clear intent
+beats one implicit behavior you can't see.
+
+---
+
+## Lesson 021 — The Document-vs-Model Problem: Trust the Migration, Not the Design
+
+Across Stage 4, the same mismatch appeared three separate times: the
+planning document (the original `Pyrobot_Master_Document.docx`) said one
+thing about the database schema, and the actual, already-applied Alembic
+migration said something different.
+
+| Entity | Docx said | Migration actually did |
+|---|---|---|
+| `conversations` | `title` nullable, `model`/`is_starred` columns | `title NOT NULL`, no `model`, no `is_starred` |
+| `messages` | column named `metadata` | column renamed to `extra_data` (SQLAlchemy reserved name conflict, fixed in Entry #007) |
+| `memories` | `UNIQUE(user_id, key)` constraint | plain non-unique index on `key` alone |
+
+None of these were failures of planning — they were real decisions made
+in the moment of implementation that just weren't reconciled back into
+the design document.
+
+**The rule this establishes**: when a planning document and a live model
+disagree, the model is *always* right. It's what Alembic actually
+applied to the real Postgres instance. Guessing or inferring from an
+older doc causes real bugs, not just inconsistencies.
+
+**Why the `memories` case was the most consequential**: the missing
+`UNIQUE(user_id, key)` constraint wasn't cosmetic. The upsert pattern
+(`PUT /memory/{key}` = "create or update") only works correctly if the
+database enforces uniqueness. Without it, nothing stops two rows with the
+same `(user_id, key)` from existing simultaneously — and
+`.scalar_one_or_none()` (this project's standard query pattern) would
+throw `MultipleResultsFound` the moment it tried to read back a
+duplicated key, which is a 500 error, not graceful degradation.
+
+**The process that prevented all three from shipping as bugs**:
+before writing any service code for a new model, open both the ORM class
+file *and* the Alembic migration that actually applied it. They're
+different sources of truth and they can disagree. The migration file wins.
+
+---
+
+## Lesson 022 — Database-Native Upserts vs. Check-Then-Write
+
+`PUT /memory/{key}` needs to "create or update" — if the key doesn't
+exist yet, insert it; if it already does, overwrite the value.
+
+**The naive approach** (check-then-write):
+```python
+existing = await session.execute(select(Memory).where(...))
+if existing:
+    existing.value = new_value
+    await session.commit()
+else:
+    session.add(Memory(...))
+    await session.commit()
+```
+This is correct in a single-user, single-process world. In the real
+world, it has a race condition: two simultaneous requests to set the same
+key both read "it doesn't exist yet," both try to insert, and one of them
+crashes with a unique constraint violation.
+
+**The database-native approach** (Postgres `ON CONFLICT`):
+```python
+stmt = (
+    pg_insert(Memory)
+    .values(user_id=user_id, key=key, value=value)
+    .on_conflict_do_update(
+        index_elements=["user_id", "key"],
+        set_={"value": value},
+    )
+)
+await session.execute(stmt)
+```
+This is one round trip to the database, and it's atomic by construction.
+The database handles the conflict resolution internally — two simultaneous
+requests can't both "win" the insert, because the conflict resolution
+happens inside a single database operation, not across two separate
+Python statements.
+
+**What makes this possible**: the `UNIQUE(user_id, key)` constraint added
+in Stage 4.4's migration — without it, `ON CONFLICT` has nothing to
+conflict on, and the upsert silently falls back to a plain insert every
+time (creating duplicates). This is why fixing the constraint at the
+schema level was a prerequisite for the service code, not an
+afterthought.
+
+**Analogy**: check-then-write is like two people both calling to reserve
+the last hotel room at the same moment, both hearing "yes it's available,"
+and both showing up expecting a room. `ON CONFLICT` is like a booking
+system where only one transaction can hold the reservation at a time —
+the second request gets "sorry, just taken" atomically, before it commits
+anything.
+
+---
+
+## Lesson 023 — System Prompts and Multi-Provider Gotchas
+
+Every AI provider in Pyrobot uses a "system prompt" — a background
+instruction sent with every request that tells the AI who it is and how
+to behave. But "system prompt" means structurally different things to
+different providers.
+
+**OpenAI and Groq**: the system prompt is just another message in the
+messages array, with `role: "system"`. You can add multiple system
+messages; they're processed in order.
+
+**Gemini**: the system prompt is a *separate API parameter*, not a
+message. `GeminiProvider._build_contents()` extracts any `role="system"`
+messages and passes their content to `GenerateContentConfig(system_instruction=...)`. And it does this with a simple overwrite, not an append — if two messages with `role="system"` exist, only the last one's content survives.
+
+This matters for Stage 4.4's memory injection: the naive approach would
+be to add a second `{"role": "system", ...}` entry with the user's
+memory context. For OpenAI and Groq, this works. For Gemini, it silently
+discards either the base personality or the memory context, depending on
+order — no error, no warning, just quietly wrong output.
+
+**The fix**: `ChatService._build_messages()` accepts an `extra_context`
+parameter that gets appended to the *single, existing* system message
+before it's sent. Every provider only ever sees one system message,
+regardless of how much extra context is added.
+
+**The broader lesson**: the Provider Pattern (Lesson 003) hides the
+differences between providers from the rest of the application — but
+you still need to know those differences exist *inside* each provider
+implementation. The abstraction works because someone understood what
+they were abstracting. "It's all the same interface" is true from the
+outside; it's only true on the inside because the adapter layer actively
+manages the differences. This is why `gemini_provider.py` deserved a
+re-read before extending it, even though it was "already done" and
+"already working."
+
+---
+
+## Lesson 024 — Full-Suite Regression Testing: Why Individual Stage Tests Aren't Enough
+
+Every substage in Stage 4 ran its own test file in isolation:
+`test_conversations.py`, `test_messages.py`, `test_context_reconstruction.py`,
+`test_memory.py`. Every one passed, every time.
+
+The first time `pytest tests/ -v` ran — all files together, for the
+first time — it found a real failure: `test_generate_unknown_model_returns_400`
+in `test_chat.py`, a Stage 3 test, failing because of a Stage 3 Addendum
+change.
+
+The specific bug: the test used `llama-3.3-70b-versatile` as an example of an
+"unregistered model name." That was true when the test was written. It
+stopped being true the moment the Stage 3 Addendum added Groq to the
+factory — at which point `llama-3.3-70b-versatile` became a real,
+registered model, and the endpoint correctly returned 200 instead of 400.
+
+No individual stage's tests could have caught this — `test_chat.py` only
+ran alongside the Stage 3-era factory, when the test data was still
+valid. The regression only became visible when everything ran together.
+
+**What this proves about test data**: "this value doesn't exist" test
+fixtures have a useful shelf life only as long as the thing they're
+representing as absent stays absent. That's different from a test about
+a permanent property ("400 is returned for unknown models") — the
+property is still correct, the *data* expressing it went stale.
+
+**The fix principle**: use fixture values that are structurally impossible
+to become valid, not just currently invalid. `"definitely-not-a-real-model-xyz"`
+can never be accidentally registered; a real provider's old model name
+can be, and apparently will be, as the project grows.
+
+**Takeaway**: run the full suite together at every stage boundary, not
+just the new stage's tests. Per-stage test runs verify the new code;
+full-suite runs verify that the new code doesn't break what was
+already proven. Both checks serve different purposes, and neither
+substitutes for the other.

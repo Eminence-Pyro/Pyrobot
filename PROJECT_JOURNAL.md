@@ -805,6 +805,7 @@ conversation's activity timestamp — four operations that need to succeed
 or fail together as one unit, not independently.
 
 ### Decisions Made (13)
+
 1. **Commit boundary moved to the service layer**, exactly as
    `user_repository.py`'s own comment anticipated back in Stage 2.3:
    *"if a future feature needs several writes to succeed or fail
@@ -848,7 +849,8 @@ or fail together as one unit, not independently.
    to prove — a real saved reply, not a stubbed string — benefits from a
    real round trip, at zero cost via Groq's free tier.
 
-### Bugs Encountered
+### Bugs Encountered (13)
+
 **Pylance: `Message` not assignable to `MessageResponse`.** The router
 was passing raw SQLAlchemy ORM objects directly into
 `MessageExchangeResponse`'s fields. This actually works at runtime
@@ -870,7 +872,8 @@ import root *is* `backend/` itself — so the package is `app`, never
 `app.api.v1`; this one line didn't match the established pattern.
 Corrected to `from app.api.v1 import messages`.
 
-### Lessons Learned
+### Lessons Learned (13)
+
 - **Explicit conversion beats implicit framework magic the moment a
   static type checker can't see through the magic.** Pydantic's
   `from_attributes` coercion is genuinely useful, but relying on it
@@ -889,7 +892,8 @@ Corrected to `from app.api.v1 import messages`.
   a tool correctly following its own rule, on a case the rule wasn't
   meant to catch.
 
-### Stage Outcome
+### Stage Outcome (13)
+
 - ✅ `message_repository.py`, `message_service.py`, `api/v1/messages.py`,
   `schemas/message.py` — implemented, reviewed, corrected
 - ✅ `test_messages.py` — 7/7 passing, including a real round trip through
@@ -899,11 +903,13 @@ Corrected to `from app.api.v1 import messages`.
   by automated test, protecting Stage 4.1's list-ordering guarantee
 
 ## Entry #014 — Stage 4.3: Context Reconstruction
+
 **Date:** June 2026
 **Stage:** 4.3 — Context Reconstruction
 **Status:** ✅ Complete
 
-### The Challenge
+### The Challenge (14)
+
 Stage 4.2 deliberately sent the AI provider only the newest message,
 even though full conversation history was already being saved correctly.
 The data existed; it just wasn't being read back. This stage's entire
@@ -911,7 +917,8 @@ job was closing that one gap — not building new infrastructure, wiring
 two already-built pieces (`MessageRepository.list_for_conversation()`
 and `ChatService.generate()`) together for the first time.
 
-### Decisions Made
+### Decisions Made (14)
+
 1. **History is capped at the most recent 20 messages**, not sent
    unbounded — directly implementing Master Document §2.6 Layer 4's
    original spec ("Conversation History — **last N messages**"), which
@@ -937,14 +944,16 @@ and `ChatService.generate()`) together for the first time.
    Far stronger evidence than asserting the response merely "looks
    contextual."
 
-### Bugs Encountered
+### Bugs Encountered (14)
+
 None. First stage in this project's history with zero corrections needed
 between the conceptual brief and the passing test run — likely because
 both pieces being wired together (`MessageRepository`,
 `ChatService.generate()`) were already fully known, tested, and verified
 in prior stages, with no new ground-truth files required.
 
-### Lessons Learned
+### Lessons Learned (14)
+
 - **An unguessable-nonce test is a meaningfully stronger proof than a
   plausibility check** for anything involving an LLM — "the AI
   remembered something specific it could not have known any other way"
@@ -956,7 +965,8 @@ in prior stages, with no new ground-truth files required.
   `GET` endpoint quietly finishing part of 4.3's job is a good outcome,
   not a coincidence to be suspicious of.
 
-### Stage Outcome
+### Stage Outcome (14)
+
 - ✅ `message_service.py` updated — history loaded and capped before
   each AI call
 - ✅ `test_context_reconstruction.py` — 2/2 passing, including the
@@ -966,18 +976,21 @@ in prior stages, with no new ground-truth files required.
   change
 - ✅ 9/9 total across both files
 
-## Entry #015 — Stage 4.4: Memory System (Stage 4 Complete)
+## Entry #015 — Stage 4.4: Memory System (Stage 4 Complete) (14)
+
 **Date:** June 2026
 **Stage:** 4.4 — Memory System
 **Status:** ✅ Complete — closes Stage 4 in full
 
-### The Challenge
+### The Challenge (15)
+
 Wire persistent, per-user key-value memory into the AI pipeline, fulfilling
 Master Document §2.6's Layers 2–3 ("User Profile" / "Relevant Memory
 Snippets") for the first time — until now, every system prompt was a
 static string regardless of who was asking.
 
-### Decisions Made
+### Decisions Made (15)
+
 1. **`UNIQUE(user_id, key)` added via a real migration before any service
    code was written.** Investigating `models/memory.py` against the
    original docx's schema surfaced a genuine gap: the actual applied
@@ -1013,7 +1026,8 @@ static string regardless of who was asking.
    entirely instead of sending a meaningless context block to the
    provider on every single request.
 
-### Bugs Encountered
+### Bugs Encountered (15)
+
 **Missing unique constraint, confirmed via the real migration file** —
 see Decision 1. Significant beyond a cosmetic gap: writing
 `get_by_key()` with this project's normal `.scalar_one_or_none()`
@@ -1024,7 +1038,7 @@ rows existed for one key, rather than silently returning wrong data.
 this stage's full-suite regression pass** — but its root cause predates
 Stage 4.4 entirely. The test used `llama-3.3-70b-versatile` as an
 example of an *unregistered* model; that was true in Stage 3 (Entry
-#010) and became false the moment the Stage 3 Addendum (Entry #011)
+ #010) and became false the moment the Stage 3 Addendum (Entry #011)
 registered Groq. Nothing in Stage 4 touched `factory.py` — this was a
 stale test fixture, invisible to every per-stage test run since Stage 3,
 only surfaced because this was the first time the *entire* suite ran
@@ -1032,7 +1046,8 @@ together. Fixed by replacing the fixture with a string no real provider
 would ever register (`"definitely-not-a-real-model-xyz"`), making the
 assumption structurally durable instead of currently-true-by-coincidence.
 
-### Lessons Learned
+### Lessons Learned (15)
+
 - **A full regression pass earns its cost the moment it catches something
   per-stage testing structurally cannot** — every individual stage's
   tests had passed in isolation the entire time; only running everything
@@ -1049,7 +1064,8 @@ assumption structurally durable instead of currently-true-by-coincidence.
   multiple system messages), which only a re-read, not a memory of past
   correctness, could catch.
 
-### Stage Outcome
+### Stage Outcome (15)
+
 - ✅ Migration `6351e1420b8a` — `UNIQUE(user_id, key)` enforced at the DB
   layer
 - ✅ `memory_repository.py`, `memory_service.py`, `api/v1/memory.py`,
@@ -1063,7 +1079,8 @@ assumption structurally durable instead of currently-true-by-coincidence.
 - ✅ `test_chat.py` stale-fixture bug found and fixed during regression
 - ✅ **Full suite: 34/34 passing, simultaneously, for the first time**
 
-### Stage 4 — Closed
+### Stage 4 — Closed (15)
+
 All four substages (Conversation Persistence, Message Persistence,
 Context Reconstruction, Memory System) complete and verified together,
 not just individually. Pyrobot's backend now has a fully working,
@@ -1071,8 +1088,113 @@ multi-provider, persistent, context-aware, memory-influenced chat
 pipeline — the entire foundation Stage 5's frontend will be built
 against.
 
-### Next Stage
-**Stage 5.1 — Frontend Shell**: Next.js design tokens, ThemeProvider,
-Zustand stores, navigation skeleton, route groups, screen shells.
+## Entry #016 — Stage 5.1: Frontend Shell
+**Date:** June 2026
+**Stage:** 5.1 — Frontend Shell
+**Status:** ✅ Complete
 
-**Gate condition:** all screens navigate correctly in the browser.
+### The Challenge
+Build the entire frontend foundation — design tokens, theme system,
+navigation shell, Zustand stores, TanStack Query provider, API service
+layer, type definitions, and all screen shells — against a Next.js 16.2.6
+scaffold using Tailwind v4, a technology combination where several
+established conventions (tailwind.config.ts, class-based theming) no
+longer apply.
+
+### Decisions Made
+1. **TanStack Query added to the official stack** alongside Zustand —
+   Zustand owns client state (auth session, active conversation, streaming
+   buffer, selected model); TanStack Query owns server state (conversation
+   lists, message history, memory entries). Separation is cleaner than
+   putting everything in Zustand stores, which is the junior pattern. Logged
+   as an official stack update in the Master Document.
+2. **Mobile-first layout: BottomNavBar + center FAB**, not a sidebar —
+   matches Master Document §5.6's component trees and the app's
+   mobile-first design philosophy. Sidebar was in an external brief we
+   superseded.
+3. **Tailwind v4 — no `tailwind.config.ts`**. Tailwind v4 eliminated
+   the JavaScript config file entirely. All design tokens, custom utilities,
+   and theme overrides live in `globals.css` under `@theme inline`,
+   `@layer utilities`, and CSS custom properties in `:root`/`.dark`. The
+   file doesn't exist to find because it was never generated.
+4. **Design tokens added to `globals.css` without replacing shadcn's
+   existing theme** — Pyrobot's gold/glassmorphism system added in clearly
+   marked sections alongside shadcn's OKLCH semantic color tokens, not
+   instead of them. shadcn components continue to work correctly.
+5. **`next-themes` for theme switching** — `ThemeProvider` wraps the app,
+   `attribute="class"` adds/removes the `.dark` class on `<html>`,
+   CSS variables flip automatically. `suppressHydrationWarning` on `<html>`
+   in `layout.tsx` handles the expected server/client mismatch on first
+   render (next-themes reads localStorage client-side, which the server
+   can't know about).
+6. **Service layer created as typed placeholders now** — `api-client.ts`,
+   `auth-service.ts`, `conversation-service.ts`, `memory-service.ts`,
+   `chat-service.ts` all exist with correct types and real API shapes, but
+   no component calls them yet. Architecture exists before it's needed,
+   not discovered mid-feature.
+
+### Bugs Encountered
+**`useEffect(() => setMounted(true), [])` flagged by ESLint
+`react-hooks/set-state-in-effect`** — React 19's stricter rule flags
+calling setState synchronously inside an effect body. The mounted-guard
+pattern was unnecessary: `next-themes` provides `resolvedTheme` which
+returns `undefined` before hydration, giving the same "not-yet-resolved"
+signal without needing extra state. Removed entirely; `resolvedTheme`
+drives the icon selection directly.
+
+**Windows NTFS case-insensitivity deleted `TopBar.tsx`** — running
+`Remove-Item Topbar.tsx` on Windows deleted both the old `Topbar.tsx`
+(lowercase b) and the new `TopBar.tsx` (capital B) simultaneously, since
+NTFS treats them as the same path. On Linux/macOS/Railway (production),
+these are genuinely distinct files. Manifested as a build error
+(`Module not found: Can't resolve '@/components/layout/TopBar'`) after
+the file appeared to have been created successfully. Fixed by recreating
+the file and clearing Turbopack's cache (`Remove-Item -Recurse -Force
+.next`). This is the same category of Windows-specific trap as Entry
+#007's UTF-16 encoding issue and Entry #008's ProactorEventLoop — both
+resolved, both worth remembering for future Windows-specific debugging.
+
+**Turbopack cache held stale resolution** — even after the file was
+recreated, the build still failed with the same module-not-found error
+until `.next/` was deleted. Turbopack's incremental build cache can
+persist incorrect module resolutions across builds. When a file is
+deleted and recreated (especially with case changes on Windows), always
+clear `.next/` before the next build.
+
+### Lessons Learned
+- **Tailwind v4 is a genuinely different mental model from v3** — no
+  `tailwind.config.ts`, no `theme.extend`, no `darkMode: 'class'`. All
+  configuration lives in CSS itself. The absence of a config file is
+  correct, not a setup error. Read `globals.css` as the single source
+  of truth for the token system.
+- **On Windows, file case changes are invisible to the filesystem** —
+  renaming `Topbar.tsx` to `TopBar.tsx` in Explorer or VS Code may appear
+  to work while NTFS still treats both names as the same path. Git,
+  Turbopack, and TypeScript on Linux will see them correctly; Windows
+  tools won't. Always verify with `Get-Item` when case matters.
+- **Clear `.next/` when module resolution behaves unexpectedly** —
+  Turbopack's cache is the first thing to suspect when "the file exists
+  but the build can't find it."
+
+### Stage Outcome
+- ✅ `globals.css` — full Pyrobot design token system (gold, glassmorphism
+  variants, typography scale, animation tokens) alongside shadcn's
+  existing OKLCH theme
+- ✅ `layout.tsx` — root layout with `ThemeProvider` + `QueryProvider`
+- ✅ Route groups: `(auth)` (login, register) and `(dashboard)` (chat,
+  memories, settings)
+- ✅ `TopBar.tsx` + `BottomNavBar.tsx` — mobile-first navigation shell,
+  theme toggle, gold FAB, active state highlighting
+- ✅ `GlassCard.tsx` — reusable glassmorphism primitive
+- ✅ Zustand stores: `themeStore`, `userStore`, `chatStore`
+- ✅ Type definitions: `user.types.ts`, `chat.types.ts`, `ai.types.ts`
+- ✅ Service layer: `api-client.ts`, `auth-service.ts`,
+  `conversation-service.ts`, `memory-service.ts`, `chat-service.ts`
+- ✅ `npm run build` — clean, zero errors, all 7 routes compiled
+
+### Next Stage
+**Stage 5.2 — Auth UI**: login and register screens wired to the Stage 2
+backend, session persistence via `userStore`.
+
+**Gate condition:** user can register, log in, session persists across
+page refresh.

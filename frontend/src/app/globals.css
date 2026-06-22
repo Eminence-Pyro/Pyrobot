@@ -1,122 +1,144 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
+/* ── SHADCN + TAILWIND V4 THEME MAPPING ─────────────────────────
+   Maps CSS custom properties (defined in :root/.dark below) to
+   Tailwind utility classes. Tailwind v4 reads @theme inline and
+   creates bg-*, text-*, border-* utilities automatically.
+   ──────────────────────────────────────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /* shadcn semantic tokens */
+  --color-background:               var(--background);
+  --color-foreground:               var(--foreground);
+  --color-card:                     var(--card);
+  --color-card-foreground:          var(--card-foreground);
+  --color-popover:                  var(--popover);
+  --color-popover-foreground:       var(--popover-foreground);
+  --color-primary:                  var(--primary);
+  --color-primary-foreground:       var(--primary-foreground);
+  --color-secondary:                var(--secondary);
+  --color-secondary-foreground:     var(--secondary-foreground);
+  --color-muted:                    var(--muted);
+  --color-muted-foreground:         var(--muted-foreground);
+  --color-accent:                   var(--accent);
+  --color-accent-foreground:        var(--accent-foreground);
+  --color-destructive:              var(--destructive);
+  --color-border:                   var(--border);
+  --color-input:                    var(--input);
+  --color-ring:                     var(--ring);
+
+  /* radius scale */
+  --radius-sm:   calc(var(--radius) * 0.6);
+  --radius-md:   calc(var(--radius) * 0.8);
+  --radius-lg:   var(--radius);
+  --radius-xl:   calc(var(--radius) * 1.4);
+  --radius-2xl:  calc(var(--radius) * 1.8);
+  --radius-3xl:  calc(var(--radius) * 2.2);
+
+  /* font stack */
+  --font-sans:  var(--font-sans-custom);
+  --font-mono:  var(--font-geist-mono);
+
+  /* ── PYROBOT BRAND TOKENS ──────────────────────────────────────
+     Gold is the single brand accent. Use sparingly for maximum
+     impact (primary CTA, active nav, key highlights).
+     ────────────────────────────────────────────────────────────── */
+  --color-gold:           var(--pyro-gold);
+  --color-gold-light:     var(--pyro-gold-light);
+  --color-gold-pale:      var(--pyro-gold-pale);
+  --color-bg-dark:        var(--pyro-bg-dark);
+  --color-surface-dark:   var(--pyro-surface-dark);
+  --color-surface-dark2:  var(--pyro-surface-dark2);
+  --color-user-bubble:    var(--pyro-gold);
+  --color-ai-bubble:      var(--pyro-surface-dark);
+
+  /* ── PYROBOT TYPOGRAPHY SCALE ────────────────────────────────── */
+  --text-display:   2rem;      /* 32px  800 weight  Hero headlines */
+  --text-title:     1.5rem;    /* 24px  700 weight  Screen titles  */
+  --text-heading:   1.25rem;   /* 20px  600 weight  Card titles    */
+  --text-body-lg:   1.0625rem; /* 17px  400 weight  Chat messages  */
+  --text-body:      0.9375rem; /* 15px  400 weight  Descriptions   */
+  --text-caption:   0.8125rem; /* 13px  400 weight  Timestamps     */
+  --text-micro:     0.6875rem; /* 11px  500 weight  Badges, pills  */
+
+  /* ── PYROBOT ANIMATION TOKENS ──────────────────────────────────
+     All animations use transform/opacity only — never animate
+     width, height, left, top (disables hardware acceleration).
+     ────────────────────────────────────────────────────────────── */
+  --animate-fast:    150ms ease-out;
+  --animate-normal:  250ms ease-out;
+  --animate-smooth:  350ms cubic-bezier(0.4, 0, 0.2, 1);
+  --animate-spring:  500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-stream:  30ms linear;
 }
 
+/* ── LIGHT MODE ──────────────────────────────────────────────────── */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* shadcn semantic colors */
+  --background:            oklch(1 0 0);
+  --foreground:            oklch(0.145 0 0);
+  --card:                  oklch(1 0 0);
+  --card-foreground:       oklch(0.145 0 0);
+  --popover:               oklch(1 0 0);
+  --popover-foreground:    oklch(0.145 0 0);
+  --primary:               oklch(0.205 0 0);
+  --primary-foreground:    oklch(0.985 0 0);
+  --secondary:             oklch(0.97 0 0);
+  --secondary-foreground:  oklch(0.205 0 0);
+  --muted:                 oklch(0.97 0 0);
+  --muted-foreground:      oklch(0.556 0 0);
+  --accent:                oklch(0.97 0 0);
+  --accent-foreground:     oklch(0.205 0 0);
+  --destructive:           oklch(0.577 0.245 27.325);
+  --border:                oklch(0.922 0 0);
+  --input:                 oklch(0.922 0 0);
+  --ring:                  oklch(0.708 0 0);
+  --radius:                0.625rem;
+
+  /* Pyrobot brand tokens — light mode values */
+  --pyro-gold:          #D97706;
+  --pyro-gold-light:    #F59E0B;
+  --pyro-gold-pale:     #FEF3C7;
+  --pyro-bg-dark:       #0A0A0A;
+  --pyro-surface-dark:  #1C1C1E;
+  --pyro-surface-dark2: #2C2C2E;
 }
 
+/* ── DARK MODE ───────────────────────────────────────────────────── */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* shadcn semantic colors */
+  --background:            oklch(0.145 0 0);
+  --foreground:            oklch(0.985 0 0);
+  --card:                  oklch(0.205 0 0);
+  --card-foreground:       oklch(0.985 0 0);
+  --popover:               oklch(0.205 0 0);
+  --popover-foreground:    oklch(0.985 0 0);
+  --primary:               oklch(0.922 0 0);
+  --primary-foreground:    oklch(0.205 0 0);
+  --secondary:             oklch(0.269 0 0);
+  --secondary-foreground:  oklch(0.985 0 0);
+  --muted:                 oklch(0.269 0 0);
+  --muted-foreground:      oklch(0.708 0 0);
+  --accent:                oklch(0.269 0 0);
+  --accent-foreground:     oklch(0.985 0 0);
+  --destructive:           oklch(0.704 0.191 22.216);
+  --border:                oklch(1 0 0 / 10%);
+  --input:                 oklch(1 0 0 / 15%);
+  --ring:                  oklch(0.556 0 0);
+
+  /* Pyrobot brand tokens — same values in both modes.
+     Gold doesn't shift between light/dark; it's the constant anchor. */
+  --pyro-gold:          #D97706;
+  --pyro-gold-light:    #F59E0B;
+  --pyro-gold-pale:     #FEF3C7;
+  --pyro-bg-dark:       #0A0A0A;
+  --pyro-surface-dark:  #1C1C1E;
+  --pyro-surface-dark2: #2C2C2E;
 }
 
+/* ── BASE LAYER ──────────────────────────────────────────────────── */
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -126,5 +148,51 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* ── PYROBOT GLASSMORPHISM UTILITIES ─────────────────────────────────
+   Four variants — choose the correct one per context, never mix
+   arbitrarily. Backdrop-filter requires the element to have a
+   non-transparent background to show the blur effect.
+   ───────────────────────────────────────────────────────────────── */
+@layer utilities {
+  .glass-heavy {
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+
+  .glass-medium {
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Light variant — used for cards and inputs in light mode */
+  .glass-light {
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.60);
+    border: 1px solid rgba(255, 255, 255, 0.80);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Dark variant — navigation bars, overlays on dark backgrounds */
+  .glass-dark {
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    background: rgba(0, 0, 0, 0.40);
+    border: 1px solid rgba(255, 215, 0, 0.12);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Gold glow — for active states, selected items */
+  .glow-gold {
+    box-shadow: 0 0 20px rgba(217, 119, 6, 0.35), 0 0 40px rgba(217, 119, 6, 0.15);
   }
 }

@@ -1192,9 +1192,61 @@ clear `.next/` before the next build.
   `conversation-service.ts`, `memory-service.ts`, `chat-service.ts`
 - ✅ `npm run build` — clean, zero errors, all 7 routes compiled
 
-### Next Stage
-**Stage 5.2 — Auth UI**: login and register screens wired to the Stage 2
-backend, session persistence via `userStore`.
+## Entry #017 — Stage 5.2: Auth UI
+**Date:** June 2026
+**Stage:** 5.2 — Auth UI
+**Status:** ✅ Complete
 
-**Gate condition:** user can register, log in, session persists across
-page refresh.
+### The Challenge
+Wire the login and register shells built in Stage 5.1 to the real Stage 2
+backend, with proper form validation, loading/error states, and session
+persistence that survives a page refresh — without yet having cookie-based
+tokens (which would require backend changes deferred to Stage 6).
+
+### Decisions Made
+1. **React Hook Form + Zod** — RHF registers inputs via refs, not state,
+   meaning the form doesn't re-render on every keystroke. Zod validates as
+   a schema, from which both the TypeScript type AND the runtime validation
+   are derived from one definition. @hookform/resolvers bridges them:
+   errors flow directly into the form's error state.
+2. **`useMutation` (TanStack Query) for login/register** — gives isPending,
+   isError, error, and isSuccess for free. Register flow: register() →
+   login() → me() in a single mutation function — because the backend's
+   register endpoint returns the user but not a token (confirmed from
+   test_auth.py's actual behavior), so an immediate login call is required.
+3. **`_hasHydrated` pattern via Zustand's `onRehydrateStorage`** — Zustand
+   sets this to true the moment localStorage has been read. AuthGuard and
+   the root page read this boolean directly; no `useEffect` or mount
+   tracking needed anywhere. Until `_hasHydrated` is true, auth-guarded
+   pages show a gold spinner rather than flashing protected content.
+4. **Client-side route protection (AuthGuard), not Edge Middleware** —
+   Edge Middleware requires the token to be in a cookie (server-readable).
+   Our token lives in localStorage. Moving to cookies is Stage 6 security
+   hardening. AuthGuard is an honest, explicit intermediate step, not
+   a permanent solution.
+5. **Auth layout redirects already-authenticated users** — visiting /login
+   or /register while logged in redirects to /chat immediately.
+
+### Lessons Learned
+- **Never assume register returns a token** — test_auth.py's actual fixture
+  confirmed the shape: register → separate login call. Assuming the API
+  contract from a design doc rather than reading the test file would have
+  produced a bug on the first real registration attempt.
+- **`_hasHydrated` is simpler than a mounted guard** — the common pattern
+  of `const [mounted, setMounted] = useState(false)` + `useEffect` is
+  unnecessary when Zustand's own `onRehydrateStorage` callback fires at
+  exactly the right moment with no extra state.
+
+### Stage Outcome
+- ✅ LoginForm + RegisterForm — RHF + Zod validation, loading states,
+  API error banners, gold submit button
+- ✅ AuthGuard — blocks dashboard routes until hydration is confirmed
+- ✅ useLogin + useRegister + useLogout hooks — TanStack mutations
+- ✅ userStore updated with _hasHydrated tracking
+- ✅ Root page redirect is auth-aware
+- ✅ All 12 gate items manually verified
+
+### Next Stage
+**Stage 5.3 — Chat UI**: real message interface matching the Pyrobot
+mockup — model selector, streaming bubbles, input bar, conversation
+management.

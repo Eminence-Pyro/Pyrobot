@@ -1,8 +1,19 @@
-import type { ReactNode } from 'react';
+'use client';
 
-// Auth screens get a clean, centered, dark-gradient layout —
-// no navigation bars, no sidebars.
+import { useEffect, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUserStore } from '@/store/userStore';
+
 export default function AuthLayout({ children }: { children: ReactNode }) {
+  const { _hasHydrated, accessToken } = useUserStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (_hasHydrated && accessToken) {
+      router.replace('/chat');
+    }
+  }, [_hasHydrated, accessToken, router]);
+
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4"

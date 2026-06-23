@@ -1246,7 +1246,94 @@ tokens (which would require backend changes deferred to Stage 6).
 - ✅ Root page redirect is auth-aware
 - ✅ All 12 gate items manually verified
 
+## Entry #018 — Stage 5.3: Chat UI
+**Date:** June 2026
+**Stage:** 5.3 — Chat UI
+**Status:** ✅ Complete
+
+### The Challenge
+Build the real chat interface matching the Pyrobot mockup — conversation
+list, full-screen chat session, message bubbles, streaming indicator,
+model selector, input bar — while connecting to the Stage 4 persistence
+layer and handling the edge case of expired JWT tokens gracefully.
+
+### Decisions Made
+1. **Separate `(chat)` route group from `(dashboard)`** — the mockup
+   explicitly shows no BottomNavBar on the chat session screen. Rather
+   than conditionally hiding the nav bar (a fragile `usePathname` check
+   deep in a layout), a clean second route group `(chat)/chat/[id]` shares
+   the AuthGuard but not the dashboard nav shell. Each group has exactly
+   one responsibility — correct by construction, not by condition.
+2. **Simulated typewriter via `chatStore.streaming`** — the Stage 4.2
+   endpoint returns both messages as JSON once complete. `appendStreamingToken('')`
+   starts the streaming state immediately (showing thinking dots), the API
+   call fires, and `finalizeStream()` replaces the buffer with the real
+   saved message when it lands. This gives visual streaming feedback
+   without requiring SSE at this stage. True SSE is the Stage 5.3 fast-
+   follow (wiring `chatService.streamMessage`).
+3. **Auto-logout on 401 via `api-client.ts`** — the JWT access token
+   expires in 15 minutes. Without auto-logout, an expired session would
+   silently fail all API calls while Zustand still reported the user as
+   authenticated. The fix: on any 401 response, `api-client.ts` calls
+   `useUserStore.getState().clearUser()` (Zustand's external state access,
+   no hook needed) and redirects to `/login`. This is the first line of
+   defense; proper token refresh is Stage 6.
+4. **Logout via user avatar in TopBar** — the gold avatar button (showing
+   username initial) is both a visual "I'm logged in" indicator and the
+   logout trigger. Keeps logout always accessible without a dedicated
+   settings route.
+5. **TanStack Query key strategy** — conversations list: `['conversations']`,
+   messages per conversation: `['messages', id]`. After a successful send,
+   both are invalidated so the conversation's `updated_at` surfaces in the
+   list without a manual re-fetch.
+
+### Bugs Encountered
+**401 Unauthorized blocking all API calls** — JWT from Stage 5.2 testing
+had expired by the time Stage 5.3 was being tested. `api-client.ts` threw
+`ApiError` on 401 but nothing cleared the stale session or redirected to
+login — the app appeared authenticated while the backend correctly rejected
+every request. Fixed by adding auto-clear-and-redirect in `api-client.ts`
+on any 401 response.
+
+**`currentModel` unused in `ChatTopBar.tsx`** — found the model object by
+name but only used `selectedModel` (the id string) in the JSX. Dead
+variable removed.
+
+**Stray `package-lock.json` in home directory** — `npm install` run at
+`C:\Users\nnata\` at some point left a lockfile that Turbopack detects
+as an ambiguous workspace root. Resolved by deleting the file.
+
+### Lessons Learned
+- **Route groups as a layout tool** — `(auth)` vs `(dashboard)` vs
+  `(chat)` isn't just organizational; each group expresses a different
+  layout contract. Adding a third group to express "no nav bar here" is
+  far more maintainable than patching an existing layout with conditional
+  rendering.
+- **JWT expiry is a feature, not a bug** — short-lived tokens are correct
+  security behavior. The frontend needs an explicit strategy for expiry
+  (auto-logout now, token refresh in Stage 6), not just error handling.
+  An expired token silently failing is worse than an error because it
+  gives no signal to the user.
+- **Zustand outside React** — `useUserStore.getState()` works in any
+  TypeScript module, not just components. This means auth-clearing logic
+  lives in the API client where it belongs, not scattered across
+  components with event emitters or context callbacks.
+
+### Stage Outcome
+- ✅ `/chat` — conversation list with empty state, + button creates new
+  conversation, list shows real data ordered by `updated_at DESC`
+- ✅ `/chat/[id]` — full-screen session: ChatTopBar (back, title, model
+  selector), message list (user right / AI left with ✦ icon), thinking
+  dots while waiting, StreamingBubble, ChatInputBar
+- ✅ Auto-expand textarea, Enter to send, Shift+Enter for newline
+- ✅ Copy button on AI bubbles
+- ✅ Model selector changes provider for next message
+- ✅ 401 auto-logout — expired token clears session and redirects to /login
+- ✅ Gold avatar in TopBar — shows username initial, tapping logs out
+- ✅ All 11 gate items verified manually
+- ✅ `npm run build` — clean, 8 routes, zero errors
+
 ### Next Stage
-**Stage 5.3 — Chat UI**: real message interface matching the Pyrobot
-mockup — model selector, streaming bubbles, input bar, conversation
-management.
+**Stage 5.4 — Conversation Sidebar & Settings**: conversation sidebar
+accessible from the chat screen, settings page wired (theme, model
+preference, memory management), user profile display.

@@ -28,8 +28,20 @@ async function request<T>(
     headers,
   });
 
-  // 204 No Content — valid success, nothing to parse
   if (response.status === 204) return undefined as T;
+
+  if (response.status === 401) {
+    // Token expired or invalid — clear the session and force re-login.
+    // We import the store directly (not a hook) so this works outside
+    // React. window.location.href gives a full navigation reset which
+    // is cleaner than router.push() here since we're outside a component.
+    const { useUserStore } = await import('@/store/userStore');
+    useUserStore.getState().clearUser();
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    throw new ApiError(401, 'AUTH_EXPIRED', 'Session expired. Please sign in again.');
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));

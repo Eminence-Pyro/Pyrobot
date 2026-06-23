@@ -1333,7 +1333,83 @@ as an ambiguous workspace root. Resolved by deleting the file.
 - ✅ All 11 gate items verified manually
 - ✅ `npm run build` — clean, 8 routes, zero errors
 
+## Entry #019 — Stage 5.4: Conversation Sidebar & Settings
+**Date:** June 2026
+**Stage:** 5.4 — Conversation Sidebar & Settings
+**Status:** ✅ Complete
+
+### The Challenge
+Wire the Settings, Memories, and conversation-switching surfaces to real
+backend data — model preferences persisted across sessions, memory entries
+readable and deletable, conversation history accessible from within an
+active chat — without adding new backend endpoints.
+
+### Decisions Made
+1. **Settings as three tabs (AI Models / Customize / Account)** —
+   matches the mockup's tabbed structure. All three tabs share one page
+   component, avoiding route overhead for what is fundamentally one screen.
+2. **Model preference persisted to the memory endpoint** — no new backend
+   field needed. `PUT /memory/default_model { id: "model-id" }` is the
+   same upsert pattern already proven in Stage 4.4. On login, `useLogin`
+   fetches this key and restores the selection before navigating to /chat.
+3. **`chatStore` persists `selectedModel` only** via Zustand's
+   `partialize` — messages and streaming state are always loaded fresh
+   from the API, never from localStorage. Only the model selection (a
+   user preference, not server data) belongs in local persistence.
+4. **Conversation switcher as a bottom sheet inside ChatTopBar** — the
+   `···` button opens a sheet over the chat screen, listing all
+   conversations with the active one highlighted in gold. No routing
+   required — tap switches via `router.push`. Sheet fetches lazily
+   (query only enabled when `showSheet` is true).
+5. **Memories page wired to real data** — per-entry delete button +
+   "Clear all" confirmation, using the same `memoryService` calls as
+   the backend tests confirm work.
+
+### Bugs Encountered
+**`react-hook-form` and `@hookform/resolvers` not installed** — the
+Stage 5.2 install command was provided but the packages never landed
+in node_modules. Manifested as 4 build errors on the first Stage 5.4
+build attempt. Fixed by running the install command from the correct
+`frontend/` directory.
+
+**`Plus` import unused in memories/page.tsx** — leftover from the
+Stage 5.1 shell, never wired in the real version. ESLint correctly
+flagged it; removed.
+
+**Backdrop `<div onClick>` failed axe accessibility rule** — an
+anonymous clickable div with no role or label fails screen reader
+accessibility. Fixed by replacing with `<button aria-label="Close
+conversation list" tabIndex={-1}>` — semantically correct and
+keyboard-accessible by default.
+
+**`DEFAULT_MODEL` and `preferredModel` unused in settings** — draft
+variables from an earlier iteration of the settings page that were
+superseded by `selectedModel` from the store. Removed.
+
+### Lessons Learned
+- **`partialize` is the correct Zustand pattern for mixed
+  persistence** — persisting everything in a store that holds both
+  server data and user preferences would cause stale server data to
+  appear on reload. `partialize: (state) => ({ selectedModel:
+  state.selectedModel })` is explicit about what belongs in localStorage.
+- **Lazy query enabling (`enabled: showSheet`) avoids unnecessary
+  network calls** — the conversation sheet only fetches when opened.
+  This is TanStack Query's correct pattern for triggered fetches, not
+  polling or always-on queries.
+
+### Stage Outcome
+- ✅ Settings page: three tabs (AI Models, Customize, Account), all wired
+  to real data
+- ✅ Model selection persists via memory endpoint + chatStore localStorage
+- ✅ Customize tab: Personality/Tone/Response Length save to memory on blur
+- ✅ Memory management: count display, per-entry delete, clear all
+- ✅ Account tab: profile card, quick-access rows, logout button
+- ✅ Memories page: real entries with delete per row + clear all
+- ✅ ChatTopBar `···` button: conversation switcher bottom sheet, active
+  conversation highlighted
+- ✅ `npm run build` — clean, 8 routes, zero errors
+
 ### Next Stage
-**Stage 5.4 — Conversation Sidebar & Settings**: conversation sidebar
-accessible from the chat screen, settings page wired (theme, model
-preference, memory management), user profile display.
+**Stage 5.5 — Polish**: dark/light mode visual pass, animations,
+mobile-responsive layout verification. UI matches design system on
+mobile viewport.

@@ -5,14 +5,16 @@ import { ArrowLeft, MoreHorizontal, ChevronDown } from 'lucide-react';
 import { AI_MODELS, type AIModel } from '@/types/ai.types';
 import { useChatStore } from '@/store/chatStore';
 
-export function ChatTopBar() {
+interface ChatTopBarProps {
+  onOpenSheet: () => void;
+}
+
+export function ChatTopBar({ onOpenSheet }: ChatTopBarProps) {
   const router = useRouter();
   const { selectedModel, setSelectedModel } = useChatStore();
-  // currentModel removed — select uses selectedModel directly
 
   return (
     <div className="shrink-0 glass-dark border-b border-border">
-      {/* Title row */}
       <div className="h-14 flex items-center justify-between px-4">
         <button
           onClick={() => router.push('/chat')}
@@ -28,14 +30,14 @@ export function ChatTopBar() {
         </span>
 
         <button
+          onClick={onOpenSheet}
           className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="More options"
+          aria-label="Conversation history"
         >
           <MoreHorizontal size={20} />
         </button>
       </div>
 
-      {/* Model selector pill */}
       <div className="pb-3 flex justify-center relative">
         <select
           value={selectedModel}

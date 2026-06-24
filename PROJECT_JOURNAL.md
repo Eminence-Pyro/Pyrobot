@@ -1409,7 +1409,101 @@ superseded by `selectedModel` from the store. Removed.
   conversation highlighted
 - ✅ `npm run build` — clean, 8 routes, zero errors
 
+## Entry #020 — Stage 5.5: Polish (Stage 5 Complete)
+**Date:** June 2026
+**Stage:** 5.5 — Polish
+**Status:** ✅ Complete — closes Stage 5 in full
+
+### The Challenge
+Transform a technically complete UI into a premium-feeling product —
+entrance animations, a proper welcome/splash screen matching the mockup,
+the correct logo (flame, not the "P" lettermark), and a silenced VS Code
+Problems panel that was generating distracting false-positive warnings.
+
+### Decisions Made
+1. **Flame logo over the "P" lettermark** — the user explicitly preferred
+   the flame SVG from mockup 2 over the letter-initial mark used in early
+   stages. `FlameLogo.tsx` is a pure SVG component with two gradient
+   definitions (outer flame body, inner highlight) — no image file, no
+   external dependency, fully scalable. Used in both the welcome splash
+   and the TopBar.
+2. **CSS keyframe for bubble entrance, not `useState`/`useEffect` per
+   message** — the original approach created a new animation frame
+   tracker for every `MessageBubble` mount. In a conversation with 40
+   messages, that's 40 separate JS animation loops. Replaced with a
+   single `@keyframes bubbleEnter` declaration in `globals.css` applied
+   via `animation` in a static style object — fires once per mount,
+   costs nothing after that, scales to any history length with zero
+   overhead.
+3. **`PageTransition` wraps dashboard pages, not the root layout** —
+   wrapping the root layout would re-animate the shell (TopBar,
+   BottomNavBar) on every navigation. Wrapping only the `<main>` content
+   inside each page means the persistent navigation stays fixed while
+   only the content fades in — correct UX, matching how native mobile
+   apps handle transitions.
+4. **VS Code noise silenced via `.vscode/settings.json` + `.hintrc`**
+   — the 26 Problems panel entries were entirely from three sources:
+   Microsoft Edge Tools (`no-inline-styles`, `compat-api/css`),
+   the VS Code CSS language server (Tailwind v4 `@custom-variant`,
+   `@theme`, `@apply` directives), and markdownlint on the journal.
+   None were real build errors. Addressed by: `.hintrc` disabling the
+   specific Edge Tools hints, `settings.json` disabling CSS lint for
+   unknown at-rules, and removing the one genuinely deprecated
+   `-webkit-overflow-scrolling: touch` line from `globals.css`.
+
+### Bugs Encountered
+**`npm run dev` blank-screen crashes** — investigated as a potential
+code issue, ruled out as disk space exhaustion. Turbopack's incremental
+build cache + TypeScript server + Next.js dev server collectively require
+significant temporary disk space. The machine had insufficient free space;
+freeing ~50GB resolved the issue. No code changes were responsible.
+
+**`-webkit-overflow-scrolling: touch` deprecated** — the Edge Tools
+`compat-api/css` warning was technically accurate: this property was
+removed in all modern browsers as of 2023 in favor of native momentum
+scrolling (now default behavior). Deleted from `globals.css`.
+
+### Lessons Learned
+- **Per-component animation state is an antipattern at list scale** —
+  `useState(false)` + `useEffect` for a mount animation costs one React
+  state, one effect registration, and one frame callback per list item.
+  For a chat list of 50 messages this is 150 JS allocations for an
+  effect achievable with a single CSS rule. Prefer CSS animations for
+  entrance effects on list items; reserve JS animation state for complex,
+  data-driven transitions.
+- **Disk space is the silent Turbopack killer** — Turbopack's error
+  output on disk exhaustion is not "disk full," it's a hang followed by
+  a silent crash. If `npm run dev` refuses to load anything after
+  compiling, check disk space before debugging code.
+- **Tool warnings and real errors are different things** — 26 items
+  in the Problems panel, 0 build errors. The VS Code Problems panel
+  aggregates linters, language servers, and accessibility tools — many
+  of which flag stylistic preferences or browser-compatibility opinions,
+  not actual defects. The discipline developed in this project: check
+  whether the warning affects `npm run build` before acting on it.
+
+### Stage Outcome
+- ✅ Welcome/splash screen: flame logo, "PYROBOT" wordmark, ambient
+  glow, star-field texture, gold "Get Started" CTA, secondary link,
+  onboarding dots — matches mockup 1's aesthetic with mockup 2's flame
+- ✅ `FlameLogo.tsx`: pure SVG component with gradient definitions,
+  used in TopBar and welcome screen
+- ✅ Root redirect: unauthenticated → `/welcome` (not `/login` directly)
+- ✅ `PageTransition`: fade + translate-up on page content only, not shell
+- ✅ `MessageBubble`: CSS keyframe entrance, zero JS per bubble
+- ✅ FAB: gold glow shadow
+- ✅ VS Code Problems panel silenced
+- ✅ Mobile verified at 375px, 390px, 430px
+- ✅ Dark mode and light mode verified across all screens
+- ✅ `npm run build` — 10 routes, zero errors
+
+### Stage 5 — Fully Closed
+All five substages complete and verified:
+5.1 Shell → 5.2 Auth → 5.3 Chat → 5.4 Settings → 5.5 Polish.
+Pyrobot is a complete, working, mobile-first AI assistant frontend,
+wired to a fully persistent multi-provider backend.
+
 ### Next Stage
-**Stage 5.5 — Polish**: dark/light mode visual pass, animations,
-mobile-responsive layout verification. UI matches design system on
-mobile viewport.
+**Stage 6 — Production Readiness**: deployment pipeline (Vercel +
+Railway), error monitoring, rate limiting, security hardening,
+token refresh, logging improvements.

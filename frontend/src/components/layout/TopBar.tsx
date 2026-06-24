@@ -4,6 +4,7 @@ import { useTheme } from 'next-themes';
 import { Sun, Moon, Monitor } from 'lucide-react';
 import { useUserStore } from '@/store/userStore';
 import { useLogout } from '@/hooks/useAuth';
+import { FlameLogo } from '@/components/ui/FlameLogo';
 
 export function TopBar() {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -21,23 +22,20 @@ export function TopBar() {
     else setTheme('dark');
   };
 
-  // First letter of username, uppercase
   const initials = user?.username?.[0]?.toUpperCase() ?? '?';
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-4 glass-dark border-b border-border">
       {/* Logo + wordmark */}
       <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-gold flex items-center justify-center shadow-sm">
-          <span className="text-micro font-bold text-white leading-none">P</span>
-        </div>
+        <FlameLogo size={28} />
         <span className="text-heading font-bold text-foreground tracking-tight">
           Pyrobot{' '}
           <span className="text-gold" aria-hidden="true">✦</span>
         </span>
       </div>
 
-      {/* Right side: theme toggle + user avatar */}
+      {/* Right side controls */}
       <div className="flex items-center gap-2">
         <button
           onClick={cycleTheme}
@@ -48,7 +46,6 @@ export function TopBar() {
           <ThemeIcon size={18} />
         </button>
 
-        {/* User avatar — tap to log out */}
         {user && (
           <button
             onClick={logout}

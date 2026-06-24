@@ -3,11 +3,11 @@
 import { Copy, ThumbsUp, ThumbsDown } from 'lucide-react';
 import type { Message } from '@/types/chat.types';
 
-interface MessageBubbleProps {
-  message: Message;
-}
+const BUBBLE_ENTER: React.CSSProperties = {
+  animation: 'bubbleEnter 0.2s ease-out forwards',
+};
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === 'user';
 
   const handleCopy = () => {
@@ -21,7 +21,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
   if (isUser) {
     return (
-      <div className="flex justify-end px-4">
+      <div className="flex justify-end px-4" style={BUBBLE_ENTER}>
         <div className="max-w-[80%] space-y-1">
           <div
             className="rounded-2xl rounded-tr-sm px-4 py-3"
@@ -40,14 +40,11 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   }
 
   return (
-    <div className="flex flex-col gap-2 px-4">
-      {/* AI bubble */}
+    <div className="flex flex-col gap-2 px-4" style={BUBBLE_ENTER}>
       <div className="flex items-start gap-2 max-w-[88%]">
-        {/* Spark icon */}
         <div className="w-7 h-7 rounded-lg bg-gold/20 border border-gold/30 flex items-center justify-center shrink-0 mt-0.5">
           <span className="text-micro text-gold leading-none">✦</span>
         </div>
-
         <div
           className="flex-1 rounded-2xl rounded-tl-sm px-4 py-3"
           style={{ background: 'var(--pyro-surface-dark)' }}
@@ -58,7 +55,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         </div>
       </div>
 
-      {/* Action row — below the bubble, left-aligned */}
       <div className="flex items-center gap-1 pl-9">
         <ActionButton icon={<Copy size={14} />} label="Copy" onClick={handleCopy} />
         <ActionButton icon={<ThumbsUp size={14} />} label="Like" onClick={() => {}} />

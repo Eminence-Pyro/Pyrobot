@@ -20,11 +20,9 @@ export function StreamingBubble() {
         {streaming.streamingContent ? (
           <p className="text-body text-foreground whitespace-pre-wrap break-words">
             {streaming.streamingContent}
-            {/* Blinking cursor while streaming */}
             <span className="inline-block w-0.5 h-4 bg-gold ml-0.5 animate-pulse align-middle" />
           </p>
         ) : (
-          /* Thinking dots when request is in flight but no content yet */
           <div className="flex items-center gap-1 py-1">
             {[0, 1, 2].map((i) => (
               <span

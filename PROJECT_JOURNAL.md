@@ -1507,3 +1507,115 @@ wired to a fully persistent multi-provider backend.
 **Stage 6 — Production Readiness**: deployment pipeline (Vercel +
 Railway), error monitoring, rate limiting, security hardening,
 token refresh, logging improvements.
+
+---
+
+## Entry #006 — Stage 5.6: UI Polish — Mockup 1 Fidelity Pass
+
+**Date:** July 2026
+**Stage:** 5.6 — Design System Reset & Mockup 1 Alignment
+**Status:** ✅ Complete
+
+### The Challenge
+
+After multiple rapid design iterations, the UI had diverged significantly
+from the target mockup (mockup 1 — dark gold aesthetic). Specific issues:
+1. **Dark/light mode toggle removed** — regression introduced when globals.css
+   was replaced wholesale. The `ThemeProvider` was still wired but the
+   TopBar's toggle button was gone.
+2. **Thin scrollbar removed** — `::-webkit-scrollbar` was set to `width:0`
+   instead of `3px`, making scrollable lists feel unpolished.
+3. **Wrong default theme** — at one point the root was set to light/cream
+   (mockup 2 aesthetic) instead of the dark near-black of mockup 1.
+4. **FlameLogo was a generic fire SVG** — mockup 1 shows a stylized bold
+   gold "P" letterform with a flame crown above it, not a bare flame shape.
+5. **BottomNavBar had wrong items** — mockup 1 shows 5 items: Home / Explore /
+   ✦ FAB / History / Profile. Previous versions had 3 or 4.
+6. **Viewport not locked to mobile** — the app is a mobile-first PWA. The
+   body was scrollable and didn't behave like a native app shell.
+7. **Mockup 1 screen 2 greeting was wrong** — mockup reads "Good morning,
+   Pyrobot! 👋" + subtitle. Our version had no greeting.
+
+### Decisions Made
+
+**Globals.css reset to dark-first design tokens**
+- `:root` → deep `#0A0A0A` near-black background (matches mockup 1 splash).
+- `.light` → warm cream `#FAFAF5` (available via toggle, not default).
+- Thin scrollbar restored: `width: 3px` with `rgba(255,255,255,0.12)` thumb.
+- `html, body { overflow: hidden }` to lock the shell — scroll happens inside
+  `<main>` and the message list, not on the document body.
+
+**ThemeProvider — dark default, explicit toggle, no system override**
+- `defaultTheme="dark"` — starts dark, matching mockup 1.
+- `enableSystem={false}` — user's OS dark/light mode preference no longer
+  overrides the app. Pyrobot controls its own theme state.
+- 2-theme system: `["dark", "light"]` — clean toggle, no "system" option.
+
+**FlameLogo rebuilt as the correct "P" letterform**
+- Bold gold "P" with rounded counter-form (negative space), flame crown above,
+  optional sparkle dot for TopBar usage.
+- `FlameIcon` (standalone fire shape) retained as a named export for auth screens.
+
+**TopBar restored with dark/light toggle**
+- Left: FlameLogo + "Pyrobot ✦" + "Your AI Assistant" subtitle.
+- Right: Sun/Moon toggle (explicit theme switch) + gold avatar → logout.
+- Uses `glass-bar` utility: dark-frosted glass with `backdrop-filter: blur(24px)`.
+
+**BottomNavBar aligned to mockup 1**
+- 5 items: Home / Explore / ✦ FAB (raised gold) / History / Profile.
+- Centre FAB is a raised (`margin-top: -20px`) gold gradient rounded-square
+  with pulsing gold glow, showing "✦" instead of an icon.
+
+**Home Dashboard (screen 2)**
+- Personalised greeting with time-of-day ("Good morning / afternoon / evening, [name]!").
+- "What shall we tackle today?" subtitle.
+- Pill-shaped "Ask me anything…" bar with gold mic button on the right.
+- 2×3 chip grid (6 quick actions): Chat with AI / Write / Summarize / Brainstorm / Plan / Translate.
+- "Recent Chats" section with "See all" link, convo rows with emoji avatar + timestamp + star.
+
+**Chat screen (screen 3)**
+- ChatTopBar: back arrow | "Chat with Pyrobot ✦" + GPT-4o green pill | ⋯
+- User bubbles: dark gold-tinted right-aligned with `✓✓` gold checkmarks.
+- AI bubbles: dark left-aligned with `✦` sparkle avatar.
+- 6 action buttons below AI messages: Copy / Like / Dislike / Save / Retry / Share.
+- ChatInputBar: + attachment | pill textarea | gold round mic→send button.
+
+**Settings (screen 4)**
+- Tabs switcher: Tools / AI Models / Customize (gold underline on active).
+- AI Models tab: 2×2 card grid with active model showing coloured checkmark.
+  Default active: GPT-4o (gold), with Claude, Gemini 1.5 Pro, Perplexity.
+- Customize tab: Personality / Response Length / Tone / Memory rows with chevrons.
+- Tools tab: general settings rows + red Sign Out button.
+
+### Bugs Encountered
+None. All changes were additive redesigns, not logic changes.
+Backend was untouched throughout.
+
+### Lessons Learned
+- **Design iteration discipline**: when replacing a CSS file wholesale,
+  audit what the previous version provided before deleting — especially
+  for theme toggles, scrollbar styles, and viewport locking.
+- **"Mobile-first" means the body must not scroll** — the native-app feel
+  of a mobile PWA depends entirely on `overflow: hidden` on `html, body`
+  with scrolling confined to inner containers. Without this, the browser
+  chrome (address bar) jumps on scroll, destroying the illusion of a native app.
+- **Default theme is a product decision, not a developer preference** — the
+  mockup defines dark as the brand default. Respecting that is part of
+  fidelity to the design.
+
+### Stage Outcome
+- ✅ Mockup 1 dark theme: `#0A0A0A` background, `#F59E0B` gold, glass bars
+- ✅ Light mode: restored and togglable via Sun/Moon button in TopBar
+- ✅ Thin scrollbar: `3px` wide, semi-transparent, themed per mode
+- ✅ FlameLogo: gold "P" with flame crown + optional sparkle dot
+- ✅ Welcome screen: stars, floating P logo, "PYROBOT" wordmark, "Your AI. Your Way.", dual CTAs
+- ✅ Home (screen 2): personalised greeting, search bar, 2×3 chip grid, recent chats
+- ✅ Chat (screen 3): back | "Chat with Pyrobot ✦" + model pill | ⋯ topbar
+- ✅ Settings (screen 4): Tools/AI Models/Customize tabs, 2×2 model grid
+- ✅ Viewport locked: `overflow: hidden` on html/body — mobile PWA feel
+- ✅ Dark/light toggle: Sun/Moon in TopBar, `defaultTheme="dark"`
+- ✅ Journals updated to reflect all changes
+
+### Next Stage
+**Stage 6 — Production Readiness**: Vercel deployment, error monitoring (Sentry),
+rate limiting, token refresh, CI/CD pipeline.

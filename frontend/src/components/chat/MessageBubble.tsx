@@ -1,85 +1,84 @@
-'use client';
-
-import { Copy, ThumbsUp, ThumbsDown } from 'lucide-react';
-import type { Message } from '@/types/chat.types';
+"use client";
+import { Copy, ThumbsUp, ThumbsDown, RefreshCw, Share2, Bookmark } from "lucide-react";
+import type { Message } from "@/types/chat.types";
 
 const BUBBLE_ENTER: React.CSSProperties = {
-  animation: 'bubbleEnter 0.2s ease-out forwards',
+  animation: "bubbleEnter 0.22s ease-out forwards",
 };
 
-export function MessageBubble({ message }: { message: Message }) {
-  const isUser = message.role === 'user';
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(message.content);
-  };
-
-  const timestamp = new Date(message.created_at).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
+function formatTime(dateStr: string) {
+  return new Date(dateStr).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
   });
+}
+
+export function MessageBubble({ message }: { message: Message }) {
+  const isUser = message.role === "user";
+  const time   = formatTime(message.created_at);
+
+  const copy = () => navigator.clipboard.writeText(message.content);
 
   if (isUser) {
     return (
-      <div className="flex justify-end px-4" style={BUBBLE_ENTER}>
+      <div className="flex justify-end px-4 mb-3" style={BUBBLE_ENTER}>
         <div className="max-w-[80%] space-y-1">
-          <div
-            className="rounded-2xl rounded-tr-sm px-4 py-3"
-            style={{ background: 'var(--pyro-surface-dark2)' }}
-          >
-            <p className="text-body text-foreground whitespace-pre-wrap break-words">
+          <div className="bubble-user px-4 py-3">
+            <p className="text-body text-foreground whitespace-pre-wrap break-words leading-relaxed">
               {message.content}
             </p>
           </div>
           <p className="text-micro text-muted-foreground text-right pr-1">
-            {timestamp} ✓✓
+            {time} <span className="text-gold">✓✓</span>
           </p>
         </div>
       </div>
     );
   }
 
+  // AI bubble
   return (
-    <div className="flex flex-col gap-2 px-4" style={BUBBLE_ENTER}>
-      <div className="flex items-start gap-2 max-w-[88%]">
-        <div className="w-7 h-7 rounded-lg bg-gold/20 border border-gold/30 flex items-center justify-center shrink-0 mt-0.5">
-          <span className="text-micro text-gold leading-none">✦</span>
-        </div>
+    <div className="flex flex-col gap-1.5 px-4 mb-4" style={BUBBLE_ENTER}>
+      <div className="flex items-start gap-2.5 max-w-[88%]">
+        {/* AI avatar */}
         <div
-          className="flex-1 rounded-2xl rounded-tl-sm px-4 py-3"
-          style={{ background: 'var(--pyro-surface-dark)' }}
+          className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 animate-sparkle"
+          style={{
+            background: "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.05))",
+            border: "1px solid rgba(245,158,11,0.3)",
+          }}
         >
-          <p className="text-body text-foreground whitespace-pre-wrap break-words">
+          <span style={{ fontSize: "0.8rem", lineHeight: 1 }}>✦</span>
+        </div>
+
+        {/* Bubble */}
+        <div className="bubble-ai px-4 py-3 flex-1">
+          <p className="text-body text-foreground whitespace-pre-wrap break-words leading-relaxed">
             {message.content}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-1 pl-9">
-        <ActionButton icon={<Copy size={14} />} label="Copy" onClick={handleCopy} />
-        <ActionButton icon={<ThumbsUp size={14} />} label="Like" onClick={() => {}} />
-        <ActionButton icon={<ThumbsDown size={14} />} label="Dislike" onClick={() => {}} />
+      {/* Action row */}
+      <div className="flex items-center gap-0.5 pl-10">
+        {[
+          { icon: <Copy size={14} />,       label: "Copy",    action: copy },
+          { icon: <ThumbsUp size={14} />,   label: "Like",    action: () => {} },
+          { icon: <ThumbsDown size={14} />, label: "Dislike", action: () => {} },
+          { icon: <Bookmark size={14} />,   label: "Save",    action: () => {} },
+          { icon: <RefreshCw size={14} />,  label: "Retry",   action: () => {} },
+          { icon: <Share2 size={14} />,     label: "Share",   action: () => {} },
+        ].map(({ icon, label, action }) => (
+          <button
+            key={label}
+            onClick={action}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/8 transition-colors"
+            aria-label={label}
+          >
+            {icon}
+          </button>
+        ))}
       </div>
     </div>
-  );
-}
-
-function ActionButton({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
-      aria-label={label}
-    >
-      {icon}
-    </button>
   );
 }

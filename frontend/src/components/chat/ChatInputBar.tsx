@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, type KeyboardEvent } from "react";
-import { Plus, Mic, ArrowUp, Loader2 } from "lucide-react";
+import { Mic, ArrowUp, Loader2, Plus } from "lucide-react";
 import { useChatStore } from "@/store/chatStore";
 
 interface ChatInputBarProps {
@@ -10,95 +10,78 @@ interface ChatInputBarProps {
 
 export function ChatInputBar({ onSend, disabled = false }: ChatInputBarProps) {
   const [content, setContent] = useState("");
-  const textareaRef           = useRef<HTMLTextAreaElement>(null);
+  const ref                   = useRef<HTMLTextAreaElement>(null);
   const { streaming }         = useChatStore();
 
-  const isSending  = disabled || streaming.isStreaming;
+  const busy       = disabled || streaming.isStreaming;
   const hasContent = content.trim().length > 0;
 
-  const handleSend = () => {
-    const trimmed = content.trim();
-    if (!trimmed || isSending) return;
-    onSend(trimmed);
+  const send = () => {
+    const t = content.trim();
+    if (!t || busy) return;
+    onSend(t);
     setContent("");
-    if (textareaRef.current) textareaRef.current.style.height = "auto";
+    if (ref.current) ref.current.style.height = "auto";
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+  const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
   };
 
-  const handleInput = () => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  const onInput = () => {
+    if (!ref.current) return;
+    ref.current.style.height = "auto";
+    ref.current.style.height = Math.min(ref.current.scrollHeight, 152) + "px";
   };
 
   return (
     <div
-      className="shrink-0 px-4 py-3 glass-dark border-t border-border"
+      className="shrink-0 px-4 py-3 glass-bottom"
       style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
     >
       <div className="flex items-end gap-2.5 max-w-2xl mx-auto">
-        {/* + attachment */}
+        {/* + button */}
         <button
-          className="w-10 h-10 rounded-2xl flex items-center justify-center text-muted-foreground flex-shrink-0"
-          style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
-          aria-label="Attachment"
-          disabled={isSending}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground flex-shrink-0 transition-colors hover:text-foreground"
+          style={{ background: "var(--muted)", border: "1px solid var(--border)" }}
+          aria-label="Add"
+          disabled={busy}
         >
-          <Plus size={20} />
+          <Plus size={19} strokeWidth={1.8} />
         </button>
 
-        {/* Text input */}
-        <div
-          className="flex-1 rounded-3xl px-4 py-2.5 transition-all"
-          style={{
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.09)",
-            outline: "none",
-          }}
-        >
+        {/* Text input pill */}
+        <div className="flex-1 input-pill">
           <textarea
-            ref={textareaRef}
+            ref={ref}
             value={content}
             onChange={e => setContent(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onInput={handleInput}
+            onKeyDown={onKey}
+            onInput={onInput}
             placeholder="Ask anything…"
-            disabled={isSending}
+            disabled={busy}
             rows={1}
-            className="w-full bg-transparent text-body text-foreground placeholder:text-muted-foreground resize-none outline-none leading-relaxed disabled:opacity-50"
-            style={{ maxHeight: "160px" }}
+            className="flex-1 bg-transparent text-body text-foreground placeholder:text-muted-foreground resize-none outline-none leading-relaxed disabled:opacity-50 w-full"
+            style={{ maxHeight: "152px" }}
           />
         </div>
 
-        {/* Mic / Send — gold button */}
+        {/* Mic / Send */}
         <button
-          onClick={hasContent ? handleSend : undefined}
-          disabled={isSending && !streaming.isStreaming}
-          className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
+          onClick={send}
+          disabled={busy && !streaming.isStreaming}
+          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 text-white transition-all active:scale-90"
           style={{
-            background: "linear-gradient(135deg, #F59E0B, #D97706)",
-            boxShadow: "0 0 20px rgba(245,158,11,0.4), 0 4px 12px rgba(0,0,0,0.4)",
-            opacity: isSending && !hasContent ? 0.7 : 1,
+            background: "linear-gradient(135deg, #D4920E, #C17D0A)",
+            boxShadow: "0 0 16px rgba(193,125,10,0.4), 0 3px 8px rgba(0,0,0,0.2)",
           }}
-          aria-label={hasContent ? "Send" : "Voice input"}
+          aria-label={hasContent ? "Send" : "Voice"}
         >
-          {isSending ? (
-            <Loader2 size={20} className="text-black animate-spin" />
-          ) : hasContent ? (
-            <ArrowUp size={20} className="text-black" strokeWidth={2.5} />
-          ) : (
-            <Mic size={20} className="text-black" strokeWidth={2} />
-          )}
+          {busy
+            ? <Loader2 size={19} className="animate-spin" />
+            : hasContent
+              ? <ArrowUp size={19} strokeWidth={2.5} />
+              : <Mic size={19} strokeWidth={1.8} />}
         </button>
       </div>
     </div>

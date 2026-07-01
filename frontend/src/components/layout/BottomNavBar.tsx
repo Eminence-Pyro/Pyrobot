@@ -1,88 +1,72 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, MessageSquare, User } from "lucide-react";
+import { Home, Compass, History, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-const LEFT_NAV  = [
-  { href: "/chat",     icon: Home,           label: "Home"    },
-  { href: "/messages", icon: MessageSquare,  label: "Chat"    },
+const LEFT_ITEMS  = [
+  { href: "/chat",     icon: Home,    label: "Home"    },
+  { href: "/explore",  icon: Compass, label: "Explore" },
 ] as const;
-
-const RIGHT_NAV = [
-  { href: "/settings", icon: User,           label: "Profile" },
+const RIGHT_ITEMS = [
+  { href: "/memories", icon: History, label: "History" },
+  { href: "/settings", icon: User,    label: "Profile" },
 ] as const;
-
-/* 4-dot grid icon for Explore FAB — matches mockup 2 */
-function GridIcon({ size = 20 }: { size?: number }) {
-  const d = size * 0.4;
-  const g = size * 0.13;
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
-      <rect x="2"  y="2"  width={d} height={d} rx="2" fill="currentColor"/>
-      <rect x="11" y="2"  width={d} height={d} rx="2" fill="currentColor"/>
-      <rect x="2"  y="11" width={d} height={d} rx="2" fill="currentColor"/>
-      <rect x="11" y="11" width={d} height={d} rx="2" fill="currentColor"/>
-    </svg>
-  );
-}
 
 export function BottomNavBar() {
-  const pathname  = usePathname();
-  const isActive = (href: string) =>
+  const pathname = usePathname();
+  const active   = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 glass-bottom"
+      className="fixed bottom-0 left-0 right-0 z-50 glass-bar border-t"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 8px)" }}
     >
-      <div
-        className="flex items-center justify-around px-4 max-w-lg mx-auto"
-        style={{ height: 60 }}
-      >
-        {LEFT_NAV.map(({ href, icon, label }) => (
-          <NavItem key={href} href={href} icon={icon} label={label} active={isActive(href)} />
+      <div className="flex items-end justify-around px-2 pt-1.5 pb-1.5 max-w-lg mx-auto">
+        {LEFT_ITEMS.map(item => (
+          <NavItem key={item.href} {...item} active={active(item.href)} />
         ))}
 
-        {/* Centre FAB — gold circle with grid icon */}
+        {/* Centre ✦ FAB — raised, gold glow */}
         <Link
-          href="/explore"
-          aria-label="Explore tools"
-          className="flex items-center justify-center rounded-full transition-all active:scale-90"
+          href="/chat"
+          aria-label="New conversation"
+          className="flex items-center justify-center rounded-[18px] gold-gradient gold-glow text-black font-black transition-all active:scale-90 animate-pulse-gold flex-shrink-0"
           style={{
-            width: 50, height: 50,
-            background: "linear-gradient(135deg, #D4920E, #C17D0A)",
-            boxShadow: "0 0 20px rgba(193,125,10,0.5), 0 4px 12px rgba(0,0,0,0.2)",
-            color: "#fff",
+            width: 52, height: 52,
+            marginTop: -20,
+            fontSize: "1.5rem",
+            lineHeight: 1,
           }}
         >
-          <GridIcon size={22} />
+          ✦
         </Link>
 
-        {RIGHT_NAV.map(({ href, icon, label }) => (
-          <NavItem key={href} href={href} icon={icon} label={label} active={isActive(href)} />
+        {RIGHT_ITEMS.map(item => (
+          <NavItem key={item.href} {...item} active={active(item.href)} />
         ))}
       </div>
     </nav>
   );
 }
 
-function NavItem({ href, icon: Icon, label, active }: {
+function NavItem({
+  href, icon: Icon, label, active,
+}: {
   href: string; icon: LucideIcon; label: string; active: boolean;
 }) {
   return (
     <Link
       href={href}
-      className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all"
+      className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all min-w-[52px]"
       style={{
         color: active ? "var(--pyro-gold)" : "var(--muted-foreground)",
         transition: "color var(--animate-fast)",
-        minWidth: 52,
       }}
     >
       <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
-      <span className="nav-item-label" style={{ fontWeight: active ? 600 : 400 }}>{label}</span>
+      <span className="nav-label" style={{ fontWeight: active ? 600 : 400 }}>{label}</span>
     </Link>
   );
 }

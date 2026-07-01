@@ -1,11 +1,11 @@
 "use client";
-import { Copy, ThumbsUp, ThumbsDown, RefreshCw, Bookmark } from "lucide-react";
+import { Copy, ThumbsUp, ThumbsDown, Bookmark, RefreshCw, Share2 } from "lucide-react";
 import type { Message } from "@/types/chat.types";
 
-const IN: React.CSSProperties = { animation: "bubbleEnter 0.22s ease-out forwards" };
+const ENTER: React.CSSProperties = { animation:"bubbleEnter 0.22s ease-out forwards" };
 
 function fmt(d: string) {
-  return new Date(d).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return new Date(d).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
 }
 
 export function MessageBubble({ message }: { message: Message }) {
@@ -14,7 +14,7 @@ export function MessageBubble({ message }: { message: Message }) {
 
   if (isUser) {
     return (
-      <div className="flex justify-end px-4 mb-3" style={IN}>
+      <div className="flex justify-end px-4 mb-3" style={ENTER}>
         <div className="max-w-[80%]">
           <div className="bubble-user px-4 py-3">
             <p className="text-body text-foreground whitespace-pre-wrap break-words leading-relaxed">
@@ -22,8 +22,7 @@ export function MessageBubble({ message }: { message: Message }) {
             </p>
           </div>
           <p className="text-micro text-muted-foreground text-right mt-1 pr-1">
-            {time}{" "}
-            <span className="gold-text">✓✓</span>
+            {time}{" "}<span className="gold-text">✓✓</span>
           </p>
         </div>
       </div>
@@ -31,17 +30,17 @@ export function MessageBubble({ message }: { message: Message }) {
   }
 
   return (
-    <div className="flex flex-col gap-1.5 px-4 mb-4" style={IN}>
+    <div className="flex flex-col gap-1.5 px-4 mb-4" style={ENTER}>
       <div className="flex items-start gap-2.5 max-w-[88%]">
-        {/* AI avatar — small flame */}
+        {/* ✦ AI avatar */}
         <div
-          className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+          className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 animate-sparkle"
           style={{
-            background: "linear-gradient(135deg, rgba(212,146,14,0.18), rgba(212,146,14,0.06))",
-            border: "1px solid rgba(212,146,14,0.25)",
+            background:"linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.05))",
+            border:"1px solid rgba(245,158,11,0.3)",
           }}
         >
-          <span style={{ fontSize: "0.85rem" }}>🔥</span>
+          <span style={{fontSize:"0.85rem",lineHeight:1}}>✦</span>
         </div>
 
         <div className="bubble-ai px-4 py-3 flex-1">
@@ -54,18 +53,15 @@ export function MessageBubble({ message }: { message: Message }) {
       {/* Action row */}
       <div className="flex items-center gap-0.5 pl-10">
         {[
-          { icon: <Copy size={13} />,       label: "Copy",    fn: () => navigator.clipboard.writeText(message.content) },
-          { icon: <ThumbsUp size={13} />,   label: "Like",    fn: () => {} },
-          { icon: <ThumbsDown size={13} />, label: "Dislike", fn: () => {} },
-          { icon: <Bookmark size={13} />,   label: "Save",    fn: () => {} },
-          { icon: <RefreshCw size={13} />,  label: "Retry",   fn: () => {} },
-        ].map(({ icon, label, fn }) => (
-          <button
-            key={label}
-            onClick={fn}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/8 transition-colors"
-            aria-label={label}
-          >
+          { icon:<Copy size={13}/>,        label:"Copy",    fn:()=>navigator.clipboard.writeText(message.content) },
+          { icon:<ThumbsUp size={13}/>,    label:"Like",    fn:()=>{} },
+          { icon:<ThumbsDown size={13}/>,  label:"Dislike", fn:()=>{} },
+          { icon:<Bookmark size={13}/>,    label:"Save",    fn:()=>{} },
+          { icon:<RefreshCw size={13}/>,   label:"Retry",   fn:()=>{} },
+          { icon:<Share2 size={13}/>,      label:"Share",   fn:()=>{} },
+        ].map(({icon,label,fn})=>(
+          <button key={label} onClick={fn} aria-label={label}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/8 transition-colors">
             {icon}
           </button>
         ))}

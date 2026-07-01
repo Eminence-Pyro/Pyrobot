@@ -2,19 +2,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { useUserStore } from "@/store/userStore";
-import { FlameLogo } from "@/components/ui/FlameLogo";
-
-const DOTS = [
-  { size: 1.5, top: "12%", left: "15%", delay: "0s",    dur: "3s"   },
-  { size: 1.0, top: "22%", left: "78%", delay: "0.7s",  dur: "4s"   },
-  { size: 1.0, top: "65%", left: "8%",  delay: "1.2s",  dur: "3.5s" },
-  { size: 1.5, top: "75%", left: "85%", delay: "0.4s",  dur: "5s"   },
-  { size: 1.0, top: "45%", left: "92%", delay: "1.8s",  dur: "4s"   },
-  { size: 0.8, top: "35%", left: "5%",  delay: "2.1s",  dur: "3s"   },
-  { size: 1.2, top: "88%", left: "40%", delay: "0.9s",  dur: "4.5s" },
-];
+import { FlameIcon } from "@/components/ui/FlameLogo";
 
 export default function WelcomePage() {
   const { _hasHydrated, accessToken } = useUserStore();
@@ -26,138 +15,125 @@ export default function WelcomePage() {
   }, [_hasHydrated, accessToken, router]);
 
   useEffect(() => {
-    const t = setTimeout(() => setVis(true), 100);
+    const t = setTimeout(() => setVis(true), 80);
     return () => clearTimeout(t);
   }, []);
 
+  const fade = {
+    opacity: vis ? 1 : 0,
+    transform: vis ? "translateY(0)" : "translateY(20px)",
+    transition: "opacity 0.7s ease-out, transform 0.7s ease-out",
+  };
+
   return (
     <div
-      className="relative min-h-screen flex flex-col items-center justify-between px-6 pt-20 pb-12 overflow-hidden select-none"
-      style={{ background: "linear-gradient(170deg, #0A0A0A 0%, #130B00 45%, #0A0A0A 100%)" }}
+      className="relative min-h-screen flex flex-col overflow-hidden select-none"
+      style={{
+        background:
+          "radial-gradient(ellipse 120% 80% at 60% -10%, #F5E6B0 0%, #FAFAF5 45%, #FAFAF5 100%)",
+      }}
     >
-      {/* Ambient orb */}
+      {/* Decorative orbs — soft gold shapes matching mockup 2 */}
       <div
         className="absolute pointer-events-none"
         style={{
-          width: "85vw", height: "85vw",
-          maxWidth: 420, maxHeight: 420,
-          top: "30%", left: "50%",
-          transform: "translate(-50%, -50%)",
-          background: "radial-gradient(circle, rgba(245,158,11,0.18) 0%, rgba(245,158,11,0.05) 45%, transparent 70%)",
-          opacity: vis ? 1 : 0,
-          transition: "opacity 1.6s ease-out",
-          filter: "blur(1px)",
+          width: 280, height: 280,
+          top: -60, right: -60,
+          background: "radial-gradient(circle, rgba(212,146,14,0.22) 0%, rgba(245,200,60,0.1) 50%, transparent 75%)",
+          borderRadius: "50%",
+          filter: "blur(2px)",
+        }}
+      />
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          width: 200, height: 200,
+          top: 80, right: 20,
+          background: "radial-gradient(circle, rgba(255,230,100,0.35) 0%, transparent 70%)",
+          borderRadius: "50%",
+          filter: "blur(4px)",
         }}
       />
 
-      {/* Stars */}
-      {DOTS.map((d, i) => (
-        <div
-          key={i}
-          className="absolute rounded-full pointer-events-none"
+      {/* ── Top: Logo + wordmark ── */}
+      <div className="flex flex-col items-center pt-24 pb-6" style={fade}>
+        <div className="animate-flame mb-5">
+          <FlameIcon size={80} />
+        </div>
+        <h1
+          className="font-black tracking-widest uppercase"
           style={{
-            width: d.size * 3 + "px", height: d.size * 3 + "px",
-            top: d.top, left: d.left,
-            background: "rgba(255,255,255,0.6)",
-            boxShadow: `0 0 ${d.size * 4}px rgba(255,255,255,0.4)`,
-            animation: `sparkle ${d.dur} ${d.delay} ease-in-out infinite`,
+            fontSize: "2rem",
+            letterSpacing: "0.15em",
+            color: "#1A1A1A",
           }}
-        />
-      ))}
+        >
+          PYROBOT
+        </h1>
+        <p
+          className="font-semibold mt-1"
+          style={{ color: "#C17D0A", fontSize: "0.9rem", letterSpacing: "0.02em" }}
+        >
+          Your AI. Your Advantage.
+        </p>
+      </div>
 
-      {/* ── Center hero ── */}
-      <div
-        className="flex-1 flex flex-col items-center justify-center text-center gap-7 relative z-10"
-        style={{
-          opacity: vis ? 1 : 0,
-          transform: vis ? "translateY(0)" : "translateY(24px)",
-          transition: "opacity 0.8s ease-out, transform 0.8s ease-out",
-        }}
-      >
-        {/* Logo */}
-        <div className="animate-float-logo">
-          <FlameLogo size={96} showSparkle animated />
-        </div>
-
-        {/* Wordmark */}
-        <div className="flex flex-col items-center gap-1">
-          <h1
-            className="font-black tracking-widest uppercase"
-            style={{
-              fontSize: "2.25rem",
-              letterSpacing: "0.18em",
-              background: "linear-gradient(135deg, #FCD34D 0%, #F59E0B 60%, #D97706 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
+      {/* ── Middle: Frosted card — taglines ── */}
+      <div className="flex-1 flex items-center justify-center px-6">
+        <div
+          className="w-full max-w-sm rounded-3xl px-8 py-10 text-center card-shadow"
+          style={{
+            background: "rgba(255,255,255,0.75)",
+            backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255,255,255,0.9)",
+            ...fade,
+            transitionDelay: "0.1s",
+          }}
+        >
+          <p
+            className="font-bold leading-tight mb-3"
+            style={{ fontSize: "1.5rem", color: "#1A1A1A" }}
           >
-            PYROBOT
-          </h1>
-          <div className="flex items-center gap-3">
-            <div style={{ width: 28, height: 1, background: "rgba(245,158,11,0.5)" }} />
-            <span className="text-caption text-muted-foreground tracking-widest uppercase" style={{ fontSize: "0.7rem", letterSpacing: "0.2em" }}>
-              AI Assistant
-            </span>
-            <div style={{ width: 28, height: 1, background: "rgba(245,158,11,0.5)" }} />
-          </div>
-        </div>
+            Intelligent assistance.<br />
+            Limitless possibilities.
+          </p>
+          <p style={{ color: "#C17D0A", fontWeight: 600, fontSize: "1rem" }}>
+            Always by your side.
+          </p>
 
-        {/* Tag line */}
-        <div>
-          <p className="text-display text-foreground font-black" style={{ fontSize: "1.875rem", lineHeight: 1.2 }}>
-            Your <span className="gold-gradient-text">AI.</span> Your{" "}
-            <span className="gold-gradient-text">Way.</span>
-          </p>
-          <p className="text-caption text-muted-foreground mt-3 max-w-xs leading-relaxed">
-            Smart, intuitive, and always here to help you think, plan, and create.
-          </p>
+          {/* Dot indicators */}
+          <div className="flex justify-center gap-2 mt-8">
+            <div style={{ width: 22, height: 7, borderRadius: 4, background: "#C17D0A" }} />
+            <div style={{ width: 7,  height: 7, borderRadius: 4, background: "rgba(193,125,10,0.25)" }} />
+            <div style={{ width: 7,  height: 7, borderRadius: 4, background: "rgba(193,125,10,0.25)" }} />
+            <div style={{ width: 7,  height: 7, borderRadius: 4, background: "rgba(193,125,10,0.25)" }} />
+          </div>
         </div>
       </div>
 
-      {/* ── CTA Buttons ── */}
+      {/* ── Bottom: CTA ── */}
       <div
-        className="w-full max-w-sm flex flex-col gap-3 relative z-10"
-        style={{
-          opacity: vis ? 1 : 0,
-          transform: vis ? "translateY(0)" : "translateY(16px)",
-          transition: "opacity 0.8s 0.2s ease-out, transform 0.8s 0.2s ease-out",
-        }}
+        className="px-6 pb-12 flex flex-col items-center gap-4"
+        style={{ ...fade, transitionDelay: "0.2s" }}
       >
         <Link
           href="/register"
-          className="flex items-center justify-between w-full px-6 py-4 rounded-2xl font-bold text-black transition-all active:scale-97"
+          className="w-full max-w-sm flex items-center justify-center py-4 rounded-2xl font-bold text-white transition-all active:scale-97"
           style={{
-            background: "linear-gradient(135deg, #F59E0B 0%, #FBBF24 60%, #D97706 100%)",
-            boxShadow: "0 4px 20px rgba(245,158,11,0.5), 0 1px 0 rgba(255,255,255,0.2) inset",
-            fontSize: "1rem",
+            background: "linear-gradient(135deg, #D4920E 0%, #C17D0A 100%)",
+            boxShadow: "0 4px 18px rgba(193,125,10,0.45)",
+            fontSize: "1.0625rem",
           }}
         >
-          <span>Get Started</span>
-          <div className="w-8 h-8 bg-black/20 rounded-full flex items-center justify-center">
-            <ArrowRight size={16} className="text-white" strokeWidth={2.5} />
-          </div>
+          Get Started
         </Link>
 
-        <Link
-          href="/login"
-          className="flex items-center justify-center w-full px-6 py-4 rounded-2xl font-semibold transition-all active:scale-97"
-          style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            color: "#D4D4D4",
-            fontSize: "1rem",
-          }}
-        >
-          I'll Setup Later
-        </Link>
-
-        {/* Pagination dots */}
-        <div className="flex justify-center gap-2 pt-2">
-          <div style={{ width: 22, height: 6, borderRadius: 3, background: "var(--pyro-gold)" }} />
-          <div style={{ width: 6,  height: 6, borderRadius: 3, background: "rgba(255,255,255,0.2)" }} />
-          <div style={{ width: 6,  height: 6, borderRadius: 3, background: "rgba(255,255,255,0.2)" }} />
-        </div>
+        <p className="text-caption" style={{ color: "#888" }}>
+          Already have an account?{" "}
+          <Link href="/login" className="font-semibold" style={{ color: "#C17D0A" }}>
+            Sign in
+          </Link>
+        </p>
       </div>
     </div>
   );

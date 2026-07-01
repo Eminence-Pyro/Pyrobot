@@ -590,3 +590,74 @@ just the new stage's tests. Per-stage test runs verify the new code;
 full-suite runs verify that the new code doesn't break what was
 already proven. Both checks serve different purposes, and neither
 substitutes for the other.
+
+---
+
+## Lesson 025 — Mobile Viewport Locking: Why `overflow: hidden` on `html, body` Matters
+
+**The problem you'll notice without it:** On a phone browser, scrolling the
+page causes the browser's address bar to appear and disappear — the "chrome"
+collapses to give more space when scrolling down, and reappears when scrolling
+up. This looks fine on a website. On an app, it's jarring: the "shell"
+(top nav, bottom nav) jumps up and down as the viewport height changes.
+
+**What a native app does:** In a native iOS or Android app, the safe areas
+and navigation bars are always fixed at exact pixel positions. There's no
+moving chrome. The scroll happens inside a view — not on the window itself.
+
+**How to replicate this in a Next.js PWA:**
+```css
+html, body {
+  height: 100%;
+  overflow: hidden;      /* Body does NOT scroll */
+}
+```
+Then, each scrollable section gets its own `overflow-y: auto`:
+- The message list in the chat screen: `overflow-y: auto` with `flex: 1`
+- The dashboard main content: `overflow-y: auto` inside the `<main>` element
+
+This confines scrolling to the right containers. The document itself never
+scrolls, so the browser chrome stays fixed and the app feels native.
+
+**Why Next.js makes this slightly tricky:** Next.js renders `<html>` and
+`<body>` via `layout.tsx`. You can't easily add inline styles to those elements.
+The correct approach is via `globals.css`, which targets `html, body` directly.
+
+**Thin scrollbar:** A 3px semi-transparent scrollbar (`::-webkit-scrollbar`)
+gives the scroll position visual feedback without looking like a desktop app.
+Hidden by default on mobile (where the OS hides it), but visible on desktop
+browser preview — which is where you'll be testing most of the time.
+
+---
+
+## Lesson 026 — Why `defaultTheme="dark"` and `enableSystem={false}`
+
+**The question:** Why would we explicitly disable system theme detection?
+Doesn't respecting the user's OS preference make for better UX?
+
+**The answer is product-dependent.** For a general productivity app (like a
+notes app or calendar), following the system theme is the right call — the
+user sets their system to dark mode because they want dark everywhere.
+
+For Pyrobot, the decision is different:
+- The brand identity is built around the dark near-black + gold aesthetic.
+  Mockup 1 (the design target) is dark. The welcome screen only works visually
+  on a dark background.
+- The light mode is an *opt-in* feature — a power user preference — not the
+  default experience.
+- `enableSystem={false}` means the app looks the same on everyone's device
+  on first load. The first impression is always the designed experience.
+
+**The `defaultTheme` setting** in `next-themes` sets what theme is used:
+1. On the very first visit (no stored preference yet).
+2. During server-side rendering (before the client reads localStorage).
+
+Setting it to `"dark"` ensures there's no flash-of-light-content on the
+first load — the HTML is rendered dark, and the client confirms it's dark.
+With `"system"`, the server always renders with the system default (usually
+dark for most modern browsers), but a user with a light-mode OS would see
+a light flash on first load if the SSR guess is wrong.
+
+**Practical rule:** For apps with a strong brand aesthetic, set
+`defaultTheme` to your brand's primary theme and `enableSystem={false}`.
+For utility apps that should feel native to the OS, set `enableSystem={true}`.

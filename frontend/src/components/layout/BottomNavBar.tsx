@@ -1,47 +1,63 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, History, User } from "lucide-react";
-import { FlameLogo } from "@/components/ui/FlameLogo";
+import { Home, MessageSquare, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const LEFT_NAV  = [
-  { href: "/chat",      icon: Home,    label: "Home"    },
-  { href: "/explore",   icon: Compass, label: "Explore" },
-] as const;
-const RIGHT_NAV = [
-  { href: "/memories",  icon: History, label: "History" },
-  { href: "/settings",  icon: User,    label: "Profile" },
+  { href: "/chat",     icon: Home,           label: "Home"    },
+  { href: "/messages", icon: MessageSquare,  label: "Chat"    },
 ] as const;
 
+const RIGHT_NAV = [
+  { href: "/settings", icon: User,           label: "Profile" },
+] as const;
+
+/* 4-dot grid icon for Explore FAB — matches mockup 2 */
+function GridIcon({ size = 20 }: { size?: number }) {
+  const d = size * 0.4;
+  const g = size * 0.13;
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+      <rect x="2"  y="2"  width={d} height={d} rx="2" fill="currentColor"/>
+      <rect x="11" y="2"  width={d} height={d} rx="2" fill="currentColor"/>
+      <rect x="2"  y="11" width={d} height={d} rx="2" fill="currentColor"/>
+      <rect x="11" y="11" width={d} height={d} rx="2" fill="currentColor"/>
+    </svg>
+  );
+}
+
 export function BottomNavBar() {
-  const pathname = usePathname();
+  const pathname  = usePathname();
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 glass-dark border-t border-border"
+      className="fixed bottom-0 left-0 right-0 z-50 glass-bottom"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 8px)" }}
     >
-      <div className="flex items-end justify-around px-2 pt-2 pb-2 max-w-lg mx-auto">
+      <div
+        className="flex items-center justify-around px-4 max-w-lg mx-auto"
+        style={{ height: 60 }}
+      >
         {LEFT_NAV.map(({ href, icon, label }) => (
           <NavItem key={href} href={href} icon={icon} label={label} active={isActive(href)} />
         ))}
 
-        {/* Centre FAB — gold P logo raised */}
+        {/* Centre FAB — gold circle with grid icon */}
         <Link
-          href="/chat"
-          className="nav-fab gold-gradient flex-shrink-0"
-          aria-label="New chat"
+          href="/explore"
+          aria-label="Explore tools"
+          className="flex items-center justify-center rounded-full transition-all active:scale-90"
           style={{
-            width: 52, height: 52,
-            borderRadius: 18,
-            marginTop: -18,
-            boxShadow: "0 0 28px rgba(245,158,11,0.5), 0 6px 18px rgba(0,0,0,0.6)",
+            width: 50, height: 50,
+            background: "linear-gradient(135deg, #D4920E, #C17D0A)",
+            boxShadow: "0 0 20px rgba(193,125,10,0.5), 0 4px 12px rgba(0,0,0,0.2)",
+            color: "#fff",
           }}
         >
-          <FlameLogo size={36} className="pointer-events-none" />
+          <GridIcon size={22} />
         </Link>
 
         {RIGHT_NAV.map(({ href, icon, label }) => (
@@ -52,9 +68,7 @@ export function BottomNavBar() {
   );
 }
 
-function NavItem({
-  href, icon: Icon, label, active,
-}: {
+function NavItem({ href, icon: Icon, label, active }: {
   href: string; icon: LucideIcon; label: string; active: boolean;
 }) {
   return (
@@ -68,9 +82,7 @@ function NavItem({
       }}
     >
       <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
-      <span className="nav-item-label" style={{ fontWeight: active ? 600 : 400 }}>
-        {label}
-      </span>
+      <span className="nav-item-label" style={{ fontWeight: active ? 600 : 400 }}>{label}</span>
     </Link>
   );
 }

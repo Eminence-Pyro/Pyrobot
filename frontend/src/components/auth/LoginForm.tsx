@@ -1,116 +1,101 @@
-'use client';
-
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import Link from 'next/link';
-import { Loader2 } from 'lucide-react';
-import { loginSchema, type LoginValues } from '@/lib/validations/auth';
-import { useLogin } from '@/hooks/useAuth';
+"use client";
+import { useState } from "react";
+import Link from "next/link";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useLogin } from "@/hooks/useAuth";
+import { FlameLogo } from "@/components/ui/FlameLogo";
 
 export function LoginForm() {
+  const [email,    setEmail]    = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw,   setShowPw]   = useState(false);
   const login = useLogin();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
-  });
-
-  const onSubmit = (values: LoginValues) => login.mutate(values);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    login.mutate({ email, password });
+  };
 
   return (
-    <div className="glass-medium rounded-3xl p-8 w-full max-w-sm">
-      {/* Logo mark */}
-      <div className="flex items-center gap-2 mb-8">
-        <div className="w-8 h-8 rounded-xl bg-gold flex items-center justify-center">
-          <span className="text-micro font-bold text-white">P</span>
+    <div className="flex flex-col items-center gap-8 w-full max-w-sm mx-auto px-4">
+      {/* Logo */}
+      <div className="flex flex-col items-center gap-3 pt-4">
+        <FlameLogo size={64} showSparkle />
+        <div className="text-center">
+          <h1 className="text-title font-black text-foreground">Welcome back</h1>
+          <p className="text-caption text-muted-foreground mt-0.5">Sign in to Pyrobot</p>
         </div>
-        <span className="text-heading font-bold text-foreground">
-          Pyrobot <span className="text-gold">✦</span>
-        </span>
       </div>
 
-      <h1 className="text-title font-bold text-foreground mb-1">
-        Welcome back
-      </h1>
-      <p className="text-caption text-muted-foreground mb-8">
-        Sign in to your account
-      </p>
-
-      {/* API error banner */}
-      {login.isError && (
-        <div className="mb-4 rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-3">
-          <p className="text-caption text-destructive">
-            {login.error instanceof Error
-              ? login.error.message
-              : 'Something went wrong. Please try again.'}
-          </p>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+      <form onSubmit={handleSubmit} className="w-full space-y-3">
         {/* Email */}
-        <div className="space-y-1">
-          <label htmlFor="email" className="text-caption text-muted-foreground">
-            Email
-          </label>
+        <div className="space-y-1.5">
+          <label className="text-micro text-muted-foreground uppercase tracking-wider font-semibold pl-1">Email</label>
           <input
-            id="email"
             type="email"
-            autoComplete="email"
-            disabled={login.isPending}
-            className={`w-full rounded-xl bg-white/5 border px-4 py-3 text-body text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-gold disabled:opacity-50 ${
-              errors.email ? 'border-destructive' : 'border-white/10'
-            }`}
-            placeholder="you@example.com"
-            {...register('email')}
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            required
+            className="w-full px-4 py-3.5 rounded-2xl text-body text-foreground placeholder:text-muted-foreground outline-none transition-all"
+            style={{
+              background: "var(--card)",
+              border: "1px solid var(--border)",
+            }}
+            onFocus={e => e.currentTarget.style.borderColor = "rgba(245,158,11,0.5)"}
+            onBlur={e => e.currentTarget.style.borderColor  = "var(--border)"}
           />
-          {errors.email && (
-            <p className="text-micro text-destructive">{errors.email.message}</p>
-          )}
         </div>
 
         {/* Password */}
-        <div className="space-y-1">
-          <label htmlFor="password" className="text-caption text-muted-foreground">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            disabled={login.isPending}
-            className={`w-full rounded-xl bg-white/5 border px-4 py-3 text-body text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-gold disabled:opacity-50 ${
-              errors.password ? 'border-destructive' : 'border-white/10'
-            }`}
-            placeholder="••••••••"
-            {...register('password')}
-          />
-          {errors.password && (
-            <p className="text-micro text-destructive">{errors.password.message}</p>
-          )}
+        <div className="space-y-1.5">
+          <label className="text-micro text-muted-foreground uppercase tracking-wider font-semibold pl-1">Password</label>
+          <div className="relative">
+            <input
+              type={showPw ? "text" : "password"}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="w-full px-4 py-3.5 pr-12 rounded-2xl text-body text-foreground placeholder:text-muted-foreground outline-none transition-all"
+              style={{ background: "var(--card)", border: "1px solid var(--border)" }}
+              onFocus={e => e.currentTarget.style.borderColor = "rgba(245,158,11,0.5)"}
+              onBlur={e => e.currentTarget.style.borderColor  = "var(--border)"}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw(!showPw)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </div>
+
+        {login.error && (
+          <p className="text-caption text-destructive text-center px-2">
+            {String(login.error)}
+          </p>
+        )}
 
         {/* Submit */}
         <button
           type="submit"
           disabled={login.isPending}
-          className="w-full rounded-xl bg-gold py-3 flex items-center justify-center gap-2 text-body font-semibold text-white disabled:opacity-70 active:scale-[0.98] transition-all"
+          className="w-full py-4 rounded-2xl font-bold text-black transition-all active:scale-97 disabled:opacity-60"
+          style={{
+            background: "linear-gradient(135deg, #F59E0B, #D97706)",
+            boxShadow: "0 4px 20px rgba(245,158,11,0.4)",
+            marginTop: "8px",
+          }}
         >
-          {login.isPending && <Loader2 size={16} className="animate-spin" />}
-          {login.isPending ? 'Signing in…' : 'Sign in'}
+          {login.isPending ? <Loader2 size={20} className="animate-spin mx-auto" /> : "Sign In"}
         </button>
       </form>
 
-      <p className="text-caption text-muted-foreground text-center mt-6">
-        No account?{' '}
-        <Link
-          href="/register"
-          className="text-gold hover:text-gold-light transition-colors"
-        >
+      <p className="text-caption text-muted-foreground">
+        No account?{" "}
+        <Link href="/register" className="gold-text font-semibold hover:underline">
           Create one
         </Link>
       </p>

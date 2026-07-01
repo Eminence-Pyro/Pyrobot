@@ -1,60 +1,74 @@
-'use client';
+"use client";
+import { Menu } from "lucide-react";
+import { useUserStore } from "@/store/userStore";
+import { FlameLogo } from "@/components/ui/FlameLogo";
 
-import { useTheme } from 'next-themes';
-import { Sun, Moon, Monitor } from 'lucide-react';
-import { useUserStore } from '@/store/userStore';
-import { useLogout } from '@/hooks/useAuth';
-import { FlameLogo } from '@/components/ui/FlameLogo';
+interface TopBarProps {
+  title?: string;
+  subtitle?: string;
+  showMenu?: boolean;
+  onMenuClick?: () => void;
+  rightSlot?: React.ReactNode;
+}
 
-export function TopBar() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+export function TopBar({
+  title,
+  subtitle,
+  showMenu = false,
+  onMenuClick,
+  rightSlot,
+}: TopBarProps) {
   const { user } = useUserStore();
-  const logout = useLogout();
-
-  const ThemeIcon =
-    resolvedTheme === 'dark' ? Moon
-    : resolvedTheme === 'light' ? Sun
-    : Monitor;
-
-  const cycleTheme = () => {
-    if (theme === 'dark') setTheme('light');
-    else if (theme === 'light') setTheme('system');
-    else setTheme('dark');
-  };
-
-  const initials = user?.username?.[0]?.toUpperCase() ?? '?';
+  const initials = user?.username?.[0]?.toUpperCase() ?? "?";
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-4 glass-dark border-b border-border">
-      {/* Logo + wordmark */}
-      <div className="flex items-center gap-2">
-        <FlameLogo size={28} />
-        <span className="text-heading font-bold text-foreground tracking-tight">
-          Pyrobot{' '}
-          <span className="text-gold" aria-hidden="true">✦</span>
-        </span>
-      </div>
-
-      {/* Right side controls */}
-      <div className="flex items-center gap-2">
+    <header
+      className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 glass-dark border-b border-border"
+      style={{ height: 60 }}
+    >
+      {/* Left: menu icon OR logo+wordmark */}
+      {showMenu ? (
         <button
-          onClick={cycleTheme}
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-gold hover:bg-gold/10 transition-all"
-          style={{ transition: 'var(--animate-fast)' }}
-          aria-label={`Switch theme (current: ${theme ?? 'system'})`}
+          onClick={onMenuClick}
+          className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Menu"
         >
-          <ThemeIcon size={18} />
+          <Menu size={22} />
         </button>
+      ) : (
+        <div className="flex items-center gap-2.5">
+          <FlameLogo size={30} />
+          <div className="flex flex-col leading-none">
+            <span className="text-heading font-bold text-foreground tracking-tight" style={{ fontSize: "1rem" }}>
+              Pyrobot <span className="gold-gradient-text" style={{ fontSize: "0.75rem" }}>✦</span>
+            </span>
+            <span className="text-micro text-muted-foreground">Your AI Assistant</span>
+          </div>
+        </div>
+      )}
 
+      {/* Center title (optional) */}
+      {title && (
+        <div className="absolute left-1/2 -translate-x-1/2 text-center">
+          <p className="text-heading font-semibold text-foreground">{title}</p>
+          {subtitle && <p className="text-micro text-muted-foreground">{subtitle}</p>}
+        </div>
+      )}
+
+      {/* Right: custom slot or avatar */}
+      <div className="flex items-center gap-2">
+        {rightSlot}
         {user && (
-          <button
-            onClick={logout}
-            className="w-9 h-9 rounded-full bg-gold flex items-center justify-center text-white text-caption font-bold hover:opacity-80 transition-opacity"
-            aria-label={`Logged in as ${user.username}. Tap to sign out.`}
-            title={`Sign out (${user.username})`}
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center text-black font-bold text-caption gold-glow"
+            style={{
+              background: "linear-gradient(135deg, #F59E0B, #D97706)",
+              fontSize: "0.875rem",
+            }}
+            aria-label={user.username}
           >
             {initials}
-          </button>
+          </div>
         )}
       </div>
     </header>

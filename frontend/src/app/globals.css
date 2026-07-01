@@ -3,221 +3,292 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ── SHADCN + TAILWIND V4 THEME MAPPING ─────────────────────────
-   Maps CSS custom properties (defined in :root/.dark below) to
-   Tailwind utility classes. Tailwind v4 reads @theme inline and
-   creates bg-*, text-*, border-* utilities automatically.
-   ──────────────────────────────────────────────────────────────── */
+/* ── TAILWIND V4 THEME ─────────────────────────────────────── */
 @theme inline {
-  /* shadcn semantic tokens */
-  --color-background:               var(--background);
-  --color-foreground:               var(--foreground);
-  --color-card:                     var(--card);
-  --color-card-foreground:          var(--card-foreground);
-  --color-popover:                  var(--popover);
-  --color-popover-foreground:       var(--popover-foreground);
-  --color-primary:                  var(--primary);
-  --color-primary-foreground:       var(--primary-foreground);
-  --color-secondary:                var(--secondary);
-  --color-secondary-foreground:     var(--secondary-foreground);
-  --color-muted:                    var(--muted);
-  --color-muted-foreground:         var(--muted-foreground);
-  --color-accent:                   var(--accent);
-  --color-accent-foreground:        var(--accent-foreground);
-  --color-destructive:              var(--destructive);
-  --color-border:                   var(--border);
-  --color-input:                    var(--input);
-  --color-ring:                     var(--ring);
+  --color-background:             var(--background);
+  --color-foreground:             var(--foreground);
+  --color-card:                   var(--card);
+  --color-card-foreground:        var(--card-foreground);
+  --color-popover:                var(--popover);
+  --color-popover-foreground:     var(--popover-foreground);
+  --color-primary:                var(--primary);
+  --color-primary-foreground:     var(--primary-foreground);
+  --color-secondary:              var(--secondary);
+  --color-secondary-foreground:   var(--secondary-foreground);
+  --color-muted:                  var(--muted);
+  --color-muted-foreground:       var(--muted-foreground);
+  --color-accent:                 var(--accent);
+  --color-accent-foreground:      var(--accent-foreground);
+  --color-destructive:            var(--destructive);
+  --color-border:                 var(--border);
+  --color-input:                  var(--input);
+  --color-ring:                   var(--ring);
 
-  /* radius scale */
-  --radius-sm:   calc(var(--radius) * 0.6);
-  --radius-md:   calc(var(--radius) * 0.8);
-  --radius-lg:   var(--radius);
-  --radius-xl:   calc(var(--radius) * 1.4);
-  --radius-2xl:  calc(var(--radius) * 1.8);
-  --radius-3xl:  calc(var(--radius) * 2.2);
+  --radius-sm:  calc(var(--radius) * 0.6);
+  --radius-md:  calc(var(--radius) * 0.8);
+  --radius-lg:  var(--radius);
+  --radius-xl:  calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.4);
 
-  /* font stack */
   --font-sans:  var(--font-sans-custom);
   --font-mono:  var(--font-geist-mono);
 
-  /* ── PYROBOT BRAND TOKENS ──────────────────────────────────────
-     Gold is the single brand accent. Use sparingly for maximum
-     impact (primary CTA, active nav, key highlights).
-     ────────────────────────────────────────────────────────────── */
-  --color-gold:           var(--pyro-gold);
-  --color-gold-light:     var(--pyro-gold-light);
-  --color-gold-pale:      var(--pyro-gold-pale);
-  --color-bg-dark:        var(--pyro-bg-dark);
-  --color-surface-dark:   var(--pyro-surface-dark);
-  --color-surface-dark2:  var(--pyro-surface-dark2);
-  --color-user-bubble:    var(--pyro-gold);
-  --color-ai-bubble:      var(--pyro-surface-dark);
+  /* ── PYROBOT BRAND ─────────────────────────── */
+  --color-gold:           #F59E0B;
+  --color-gold-bright:    #FBBF24;
+  --color-gold-light:     #FCD34D;
+  --color-gold-pale:      rgba(245,158,11,0.12);
+  --color-gold-glow:      rgba(245,158,11,0.25);
 
-  /* ── PYROBOT TYPOGRAPHY SCALE ────────────────────────────────── */
-  --text-display:   2rem;      /* 32px  800 weight  Hero headlines */
-  --text-title:     1.5rem;    /* 24px  700 weight  Screen titles  */
-  --text-heading:   1.25rem;   /* 20px  600 weight  Card titles    */
-  --text-body-lg:   1.0625rem; /* 17px  400 weight  Chat messages  */
-  --text-body:      0.9375rem; /* 15px  400 weight  Descriptions   */
-  --text-caption:   0.8125rem; /* 13px  400 weight  Timestamps     */
-  --text-micro:     0.6875rem; /* 11px  500 weight  Badges, pills  */
+  /* Dark surface palette */
+  --color-surface-0:      #0A0A0A;
+  --color-surface-1:      #111111;
+  --color-surface-2:      #1A1A1A;
+  --color-surface-3:      #242424;
+  --color-surface-4:      #2E2E2E;
 
-  /* ── PYROBOT ANIMATION TOKENS ──────────────────────────────────
-     All animations use transform/opacity only — never animate
-     width, height, left, top (disables hardware acceleration).
-     ────────────────────────────────────────────────────────────── */
-  --animate-fast:    150ms ease-out;
-  --animate-normal:  250ms ease-out;
-  --animate-smooth:  350ms cubic-bezier(0.4, 0, 0.2, 1);
-  --animate-spring:  500ms cubic-bezier(0.34, 1.56, 0.64, 1);
-  --animate-stream:  30ms linear;
+  /* Light mode surfaces */
+  --color-light-0:        #FAFAF9;
+  --color-light-1:        #F5F5F4;
+  --color-light-2:        #E7E5E4;
+
+  /* Timing */
+  --animate-fast:   150ms cubic-bezier(.4,0,.2,1);
+  --animate-normal: 250ms cubic-bezier(.4,0,.2,1);
+  --animate-spring: 350ms cubic-bezier(.34,1.56,.64,1);
 }
 
-/* ── LIGHT MODE ──────────────────────────────────────────────────── */
+/* ── ROOT DARK MODE (default) ─────────────────────────────── */
 :root {
-  /* shadcn semantic colors */
-  --background:            oklch(1 0 0);
-  --foreground:            oklch(0.145 0 0);
-  --card:                  oklch(1 0 0);
-  --card-foreground:       oklch(0.145 0 0);
-  --popover:               oklch(1 0 0);
-  --popover-foreground:    oklch(0.145 0 0);
-  --primary:               oklch(0.205 0 0);
-  --primary-foreground:    oklch(0.985 0 0);
-  --secondary:             oklch(0.97 0 0);
-  --secondary-foreground:  oklch(0.205 0 0);
-  --muted:                 oklch(0.97 0 0);
-  --muted-foreground:      oklch(0.556 0 0);
-  --accent:                oklch(0.97 0 0);
-  --accent-foreground:     oklch(0.205 0 0);
-  --destructive:           oklch(0.577 0.245 27.325);
-  --border:                oklch(0.922 0 0);
-  --input:                 oklch(0.922 0 0);
-  --ring:                  oklch(0.708 0 0);
-  --radius:                0.625rem;
+  --radius: 1rem;
+  --background:          #0A0A0A;
+  --foreground:          #F5F5F4;
+  --card:                #141414;
+  --card-foreground:     #F5F5F4;
+  --popover:             #1A1A1A;
+  --popover-foreground:  #F5F5F4;
+  --primary:             #F59E0B;
+  --primary-foreground:  #0A0A0A;
+  --secondary:           #1E1E1E;
+  --secondary-foreground:#D4D4D4;
+  --muted:               #1C1C1C;
+  --muted-foreground:    #737373;
+  --accent:              rgba(245,158,11,0.15);
+  --accent-foreground:   #F59E0B;
+  --destructive:         #EF4444;
+  --border:              rgba(255,255,255,0.07);
+  --input:               rgba(255,255,255,0.06);
+  --ring:                rgba(245,158,11,0.5);
 
-  /* Pyrobot brand tokens — light mode values */
-  --pyro-gold:          #D97706;
-  --pyro-gold-light:    #F59E0B;
-  --pyro-gold-pale:     #FEF3C7;
-  --pyro-bg-dark:       #0A0A0A;
-  --pyro-surface-dark:  #1C1C1E;
-  --pyro-surface-dark2: #2C2C2E;
+  /* Pyrobot semantic */
+  --pyro-gold:           #F59E0B;
+  --pyro-gold-light:     #FCD34D;
+  --pyro-gold-pale:      rgba(245,158,11,0.12);
+  --pyro-bg-dark:        #0A0A0A;
+  --pyro-surface-dark:   #181818;
+  --pyro-surface-dark2:  #222222;
+  --pyro-ai-bubble:      #1A1A1A;
+  --pyro-user-bubble:    #272217;
 }
 
-/* ── DARK MODE ───────────────────────────────────────────────────── */
-.dark {
-  /* shadcn semantic colors */
-  --background:            oklch(0.145 0 0);
-  --foreground:            oklch(0.985 0 0);
-  --card:                  oklch(0.205 0 0);
-  --card-foreground:       oklch(0.985 0 0);
-  --popover:               oklch(0.205 0 0);
-  --popover-foreground:    oklch(0.985 0 0);
-  --primary:               oklch(0.922 0 0);
-  --primary-foreground:    oklch(0.205 0 0);
-  --secondary:             oklch(0.269 0 0);
-  --secondary-foreground:  oklch(0.985 0 0);
-  --muted:                 oklch(0.269 0 0);
-  --muted-foreground:      oklch(0.708 0 0);
-  --accent:                oklch(0.269 0 0);
-  --accent-foreground:     oklch(0.985 0 0);
-  --destructive:           oklch(0.704 0.191 22.216);
-  --border:                oklch(1 0 0 / 10%);
-  --input:                 oklch(1 0 0 / 15%);
-  --ring:                  oklch(0.556 0 0);
+/* ── LIGHT MODE ────────────────────────────────────────────── */
+.light {
+  --background:          #FAFAF9;
+  --foreground:          #1C1C1C;
+  --card:                #FFFFFF;
+  --card-foreground:     #1C1C1C;
+  --popover:             #FFFFFF;
+  --popover-foreground:  #1C1C1C;
+  --primary:             #D97706;
+  --primary-foreground:  #FFFFFF;
+  --secondary:           #F5F5F4;
+  --secondary-foreground:#404040;
+  --muted:               #F5F5F4;
+  --muted-foreground:    #737373;
+  --accent:              rgba(217,119,6,0.1);
+  --accent-foreground:   #D97706;
+  --destructive:         #EF4444;
+  --border:              rgba(0,0,0,0.08);
+  --input:               rgba(0,0,0,0.04);
+  --ring:                rgba(217,119,6,0.4);
 
-  /* Pyrobot brand tokens — same values in both modes.
-     Gold doesn't shift between light/dark; it's the constant anchor. */
-  --pyro-gold:          #D97706;
-  --pyro-gold-light:    #F59E0B;
-  --pyro-gold-pale:     #FEF3C7;
-  --pyro-bg-dark:       #0A0A0A;
-  --pyro-surface-dark:  #1C1C1E;
-  --pyro-surface-dark2: #2C2C2E;
+  --pyro-gold:           #D97706;
+  --pyro-gold-light:     #F59E0B;
+  --pyro-gold-pale:      rgba(217,119,6,0.1);
+  --pyro-bg-dark:        #FAFAF9;
+  --pyro-surface-dark:   #FFFFFF;
+  --pyro-surface-dark2:  #F0EEE8;
+  --pyro-ai-bubble:      #FFFFFF;
+  --pyro-user-bubble:    #FEF3C7;
 }
 
-/* ── BASE LAYER ──────────────────────────────────────────────────── */
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-  }
+/* ── BASE STYLES ────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
 }
 
-/* ── PYROBOT GLASSMORPHISM UTILITIES ─────────────────────────────────
-   Four variants — choose the correct one per context, never mix
-   arbitrarily. Backdrop-filter requires the element to have a
-   non-transparent background to show the blur effect.
-   ───────────────────────────────────────────────────────────────── */
-@layer utilities {
-  .glass-heavy {
-    -webkit-backdrop-filter: blur(24px);
-    backdrop-filter: blur(24px);
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.20);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  }
+/* ── TYPOGRAPHY SCALE ───────────────────────────────────────── */
+.text-display    { font-size: 2rem;    line-height: 1.15; letter-spacing: -0.03em; font-weight: 800; }
+.text-title      { font-size: 1.375rem; line-height: 1.25; letter-spacing: -0.02em; font-weight: 700; }
+.text-heading    { font-size: 1.0625rem; line-height: 1.35; letter-spacing: -0.01em; font-weight: 600; }
+.text-body       { font-size: 0.9375rem; line-height: 1.55; }
+.text-caption    { font-size: 0.8125rem; line-height: 1.4;  }
+.text-micro      { font-size: 0.6875rem; line-height: 1.4; letter-spacing: 0.01em; }
 
-  .glass-medium {
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  }
-
-  /* Light variant — used for cards and inputs in light mode */
-  .glass-light {
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
-    background: rgba(255, 255, 255, 0.60);
-    border: 1px solid rgba(255, 255, 255, 0.80);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  }
-
-  /* Dark variant — navigation bars, overlays on dark backgrounds */
-  .glass-dark {
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
-    background: rgba(0, 0, 0, 0.40);
-    border: 1px solid rgba(255, 215, 0, 0.12);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-  }
-
-  /* Gold glow — for active states, selected items */
-  .glow-gold {
-    box-shadow: 0 0 20px rgba(217, 119, 6, 0.35), 0 0 40px rgba(217, 119, 6, 0.15);
-  }
-
-  /* Smooth page-level scroll — prevents jarring jumps on mobile */
-  .scroll-smooth-touch {
-    scroll-behavior: smooth;
-  }
-
-  /* Gold text gradient — used on hero headlines */
-  .text-gradient-gold {
-    background: linear-gradient(135deg, #F59E0B 0%, #D97706 50%, #B45309 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+/* ── GLASS UTILITIES ────────────────────────────────────────── */
+.glass-dark {
+  background: rgba(10,10,10,0.85);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+}
+.glass-light {
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+}
+.glass-surface {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-/* ── KEYFRAME ANIMATIONS ─────────────────────────────────────────── */
+/* ── GOLD UTILITIES ─────────────────────────────────────────── */
+.gold-text    { color: var(--pyro-gold); }
+.gold-bg      { background: var(--pyro-gold); }
+.gold-glow    { box-shadow: 0 0 20px rgba(245,158,11,0.35), 0 4px 12px rgba(0,0,0,0.4); }
+.gold-glow-sm { box-shadow: 0 0 12px rgba(245,158,11,0.25); }
+.gold-border  { border-color: rgba(245,158,11,0.3); }
+
+.gold-gradient {
+  background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 50%, #D97706 100%);
+}
+.gold-gradient-text {
+  background: linear-gradient(135deg, #F59E0B, #FCD34D);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── SCROLLBAR ──────────────────────────────────────────────── */
+::-webkit-scrollbar              { width: 0; }
+::-webkit-scrollbar-track        { background: transparent; }
+::-webkit-scrollbar-thumb        { background: transparent; }
+
+/* ── ANIMATIONS ─────────────────────────────────────────────── */
 @keyframes bubbleEnter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes pulseGold {
+  0%,100% { box-shadow: 0 0 12px rgba(245,158,11,0.3); }
+  50%      { box-shadow: 0 0 28px rgba(245,158,11,0.6); }
+}
+@keyframes floatLogo {
+  0%,100% { transform: translateY(0px); }
+  50%     { transform: translateY(-6px); }
+}
+@keyframes sparkle {
+  0%,100% { opacity:0.6; transform: scale(0.9) rotate(0deg); }
+  50%     { opacity:1;   transform: scale(1.1) rotate(180deg); }
+}
+
+.animate-float-logo { animation: floatLogo 4s ease-in-out infinite; }
+.animate-sparkle    { animation: sparkle  3s ease-in-out infinite; }
+.animate-pulse-gold { animation: pulseGold 2s ease-in-out infinite; }
+.animate-fade-up    { animation: fadeUp 0.5s ease-out forwards; }
+
+/* ── BUBBLE SHAPES ──────────────────────────────────────────── */
+.bubble-user {
+  background: var(--pyro-user-bubble);
+  border: 1px solid rgba(245,158,11,0.15);
+  border-radius: 20px 20px 4px 20px;
+}
+.bubble-ai {
+  background: var(--pyro-ai-bubble);
+  border: 1px solid var(--border);
+  border-radius: 20px 20px 20px 4px;
+}
+
+/* ── QUICK ACTION CHIPS ─────────────────────────────────────── */
+.quick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--animate-fast);
+  white-space: nowrap;
+}
+.quick-chip:hover, .quick-chip:active {
+  border-color: rgba(245,158,11,0.35);
+  background: rgba(245,158,11,0.06);
+  color: var(--pyro-gold);
+  transform: scale(0.97);
+}
+
+/* ── CONVERSATION LIST ITEM ─────────────────────────────────── */
+.convo-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all var(--animate-fast);
+}
+.convo-item:hover, .convo-item:active {
+  border-color: rgba(245,158,11,0.2);
+  background: rgba(245,158,11,0.04);
+  transform: scale(0.99);
+}
+
+/* ── NAV BOTTOM ─────────────────────────────────────────────── */
+.nav-item-label { font-size: 0.6875rem; font-weight: 500; margin-top: 2px; }
+.nav-fab {
+  width: 52px; height: 52px;
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: -16px;
+  position: relative;
+  box-shadow: 0 0 24px rgba(245,158,11,0.45), 0 6px 16px rgba(0,0,0,0.5);
+}
+
+/* ── SEARCH / INPUT BOX ─────────────────────────────────────── */
+.home-input-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  transition: border-color var(--animate-fast);
+}
+.home-input-box:focus-within {
+  border-color: rgba(245,158,11,0.4);
 }

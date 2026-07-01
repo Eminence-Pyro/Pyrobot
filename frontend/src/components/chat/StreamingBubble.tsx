@@ -1,34 +1,48 @@
-'use client';
-
-import { useChatStore } from '@/store/chatStore';
+"use client";
+import { useChatStore } from "@/store/chatStore";
 
 export function StreamingBubble() {
   const { streaming } = useChatStore();
 
-  if (!streaming.isStreaming && !streaming.streamingContent) return null;
+  if (!streaming.isStreaming && !streaming.content) return null;
 
   return (
-    <div className="flex items-start gap-2 px-4 max-w-[88%]">
-      <div className="w-7 h-7 rounded-lg bg-gold/20 border border-gold/30 flex items-center justify-center shrink-0 mt-0.5">
-        <span className="text-micro text-gold leading-none">✦</span>
+    <div className="flex items-start gap-2.5 px-4 mb-4">
+      {/* AI avatar */}
+      <div
+        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 animate-sparkle"
+        style={{
+          background: "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.05))",
+          border: "1px solid rgba(245,158,11,0.3)",
+        }}
+      >
+        <span style={{ fontSize: "0.8rem" }}>✦</span>
       </div>
 
       <div
-        className="flex-1 rounded-2xl rounded-tl-sm px-4 py-3"
-        style={{ background: 'var(--pyro-surface-dark)' }}
+        className="bubble-ai px-4 py-3 flex-1 max-w-[88%]"
+        style={{ animation: "bubbleEnter 0.22s ease-out forwards" }}
       >
-        {streaming.streamingContent ? (
-          <p className="text-body text-foreground whitespace-pre-wrap break-words">
-            {streaming.streamingContent}
-            <span className="inline-block w-0.5 h-4 bg-gold ml-0.5 animate-pulse align-middle" />
+        {streaming.content ? (
+          <p className="text-body text-foreground whitespace-pre-wrap break-words leading-relaxed">
+            {streaming.content}
+            <span
+              className="inline-block w-0.5 h-4 ml-0.5 rounded-full align-middle animate-pulse"
+              style={{ background: "var(--pyro-gold)" }}
+            />
           </p>
         ) : (
-          <div className="flex items-center gap-1 py-1">
-            {[0, 1, 2].map((i) => (
-              <span
+          /* Typing indicator */
+          <div className="flex items-center gap-1.5 py-1">
+            {[0, 1, 2].map(i => (
+              <div
                 key={i}
-                className="w-2 h-2 rounded-full bg-gold/60 animate-bounce"
-                style={{ animationDelay: `${i * 150}ms` }}
+                className="w-2 h-2 rounded-full"
+                style={{
+                  background: "var(--pyro-gold)",
+                  opacity: 0.7,
+                  animation: `pulse 1.2s ${i * 0.2}s ease-in-out infinite`,
+                }}
               />
             ))}
           </div>

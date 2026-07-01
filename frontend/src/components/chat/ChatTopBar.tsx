@@ -1,61 +1,61 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, MoreHorizontal, ChevronDown } from 'lucide-react';
-import { AI_MODELS, type AIModel } from '@/types/ai.types';
-import { useChatStore } from '@/store/chatStore';
+"use client";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ChevronDown, MoreHorizontal } from "lucide-react";
 
 interface ChatTopBarProps {
-  onOpenSheet: () => void;
+  title?: string;
+  model?: string;
 }
 
-export function ChatTopBar({ onOpenSheet }: ChatTopBarProps) {
+export function ChatTopBar({ title = "Chat with Pyrobot", model = "GPT-4o" }: ChatTopBarProps) {
   const router = useRouter();
-  const { selectedModel, setSelectedModel } = useChatStore();
 
   return (
-    <div className="shrink-0 glass-dark border-b border-border">
-      <div className="h-14 flex items-center justify-between px-4">
+    <header
+      className="fixed top-0 left-0 right-0 z-50 glass-dark border-b border-border"
+      style={{ height: 60 }}
+    >
+      <div className="flex items-center justify-between px-4 h-full">
+        {/* Back */}
         <button
-          onClick={() => router.push('/chat')}
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Back to chats"
+          onClick={() => router.back()}
+          className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-xl hover:bg-white/5"
+          aria-label="Go back"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={22} />
         </button>
 
-        <span className="text-body font-semibold text-foreground">
-          Chat with Pyrobot{' '}
-          <span className="text-gold" aria-hidden="true">✦</span>
-        </span>
+        {/* Title + model pill */}
+        <div className="flex flex-col items-center gap-1">
+          <p className="text-heading font-bold text-foreground">
+            {title} <span className="gold-gradient-text">✦</span>
+          </p>
 
+          {/* Model selector pill */}
+          <button
+            className="flex items-center gap-1.5 px-3 py-0.5 rounded-full"
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            <span
+              className="w-2 h-2 rounded-full"
+              style={{ background: "#22C55E" }}
+            />
+            <span className="text-micro text-foreground font-medium">{model}</span>
+            <ChevronDown size={11} className="text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* More options */}
         <button
-          onClick={onOpenSheet}
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Conversation history"
+          className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-xl hover:bg-white/5"
+          aria-label="More options"
         >
-          <MoreHorizontal size={20} />
+          <MoreHorizontal size={22} />
         </button>
       </div>
-
-      <div className="pb-3 flex justify-center relative">
-        <select
-          value={selectedModel}
-          onChange={(e) => setSelectedModel(e.target.value as AIModel)}
-          className="rounded-full bg-white/10 border border-white/20 px-4 py-1 text-caption font-medium text-foreground cursor-pointer appearance-none text-center pr-6"
-          aria-label="Select AI model"
-        >
-          {AI_MODELS.map((model) => (
-            <option key={model.id} value={model.id}>
-              {model.name}{model.free ? ' (free)' : ''}
-            </option>
-          ))}
-        </select>
-        <ChevronDown
-          size={12}
-          className="absolute right-[calc(50%-40px)] top-[9px] text-muted-foreground pointer-events-none"
-        />
-      </div>
-    </div>
+    </header>
   );
 }

@@ -1,56 +1,51 @@
-'use client';
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Home, Compass, History, User } from "lucide-react";
+import { FlameLogo } from "@/components/ui/FlameLogo";
+import type { LucideIcon } from "lucide-react";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { MessageSquare, Brain, Settings, Plus } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-
-const LEFT_NAV = [
-  { href: '/chat', icon: MessageSquare, label: 'Chat' },
+const LEFT_NAV  = [
+  { href: "/chat",      icon: Home,    label: "Home"    },
+  { href: "/explore",   icon: Compass, label: "Explore" },
 ] as const;
-
 const RIGHT_NAV = [
-  { href: '/memories', icon: Brain,     label: 'Memory'   },
-  { href: '/settings', icon: Settings,  label: 'Settings' },
+  { href: "/memories",  icon: History, label: "History" },
+  { href: "/settings",  icon: User,    label: "Profile" },
 ] as const;
 
 export function BottomNavBar() {
   const pathname = usePathname();
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(href + "/");
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 glass-dark border-t border-border">
-      <div className="flex items-center justify-around px-2 pt-2 pb-3">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 glass-dark border-t border-border"
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 8px)" }}
+    >
+      <div className="flex items-end justify-around px-2 pt-2 pb-2 max-w-lg mx-auto">
         {LEFT_NAV.map(({ href, icon, label }) => (
-          <NavItem
-            key={href}
-            href={href}
-            icon={icon}
-            label={label}
-            active={pathname === href || pathname.startsWith(href + '/')}
-          />
+          <NavItem key={href} href={href} icon={icon} label={label} active={isActive(href)} />
         ))}
 
-        {/* Center FAB */}
+        {/* Centre FAB — gold P logo raised */}
         <Link
           href="/chat"
-          className="w-12 h-12 rounded-2xl bg-gold flex items-center justify-center active:scale-95"
-          style={{
-            boxShadow: '0 0 20px rgba(217,119,6,0.4), 0 4px 12px rgba(0,0,0,0.3)',
-            transition: 'transform var(--animate-spring), box-shadow var(--animate-normal)',
-          }}
+          className="nav-fab gold-gradient flex-shrink-0"
           aria-label="New chat"
+          style={{
+            width: 52, height: 52,
+            borderRadius: 18,
+            marginTop: -18,
+            boxShadow: "0 0 28px rgba(245,158,11,0.5), 0 6px 18px rgba(0,0,0,0.6)",
+          }}
         >
-          <Plus size={22} className="text-white" strokeWidth={2.5} />
+          <FlameLogo size={36} className="pointer-events-none" />
         </Link>
 
         {RIGHT_NAV.map(({ href, icon, label }) => (
-          <NavItem
-            key={href}
-            href={href}
-            icon={icon}
-            label={label}
-            active={pathname === href}
-          />
+          <NavItem key={href} href={href} icon={icon} label={label} active={isActive(href)} />
         ))}
       </div>
     </nav>
@@ -58,26 +53,22 @@ export function BottomNavBar() {
 }
 
 function NavItem({
-  href,
-  icon: Icon,
-  label,
-  active,
+  href, icon: Icon, label, active,
 }: {
-  href: string;
-  icon: LucideIcon;
-  label: string;
-  active: boolean;
+  href: string; icon: LucideIcon; label: string; active: boolean;
 }) {
   return (
     <Link
       href={href}
-      className={`flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition-all ${
-        active ? 'text-gold' : 'text-muted-foreground hover:text-foreground'
-      }`}
-      style={{ transition: 'color var(--animate-fast)' }}
+      className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all"
+      style={{
+        color: active ? "var(--pyro-gold)" : "var(--muted-foreground)",
+        transition: "color var(--animate-fast)",
+        minWidth: 52,
+      }}
     >
-      <Icon size={22} strokeWidth={active ? 2.5 : 2} />
-      <span className="text-micro" style={{ fontWeight: active ? 600 : 400 }}>
+      <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
+      <span className="nav-item-label" style={{ fontWeight: active ? 600 : 400 }}>
         {label}
       </span>
     </Link>

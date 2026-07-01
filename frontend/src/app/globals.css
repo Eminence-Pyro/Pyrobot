@@ -3,221 +3,256 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ── TAILWIND V4 THEME ─────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════
+   TAILWIND V4 THEME TOKENS
+══════════════════════════════════════════════════════ */
 @theme inline {
-  --color-background:             var(--background);
-  --color-foreground:             var(--foreground);
-  --color-card:                   var(--card);
-  --color-card-foreground:        var(--card-foreground);
-  --color-popover:                var(--popover);
-  --color-popover-foreground:     var(--popover-foreground);
-  --color-primary:                var(--primary);
-  --color-primary-foreground:     var(--primary-foreground);
-  --color-secondary:              var(--secondary);
-  --color-secondary-foreground:   var(--secondary-foreground);
-  --color-muted:                  var(--muted);
-  --color-muted-foreground:       var(--muted-foreground);
-  --color-accent:                 var(--accent);
-  --color-accent-foreground:      var(--accent-foreground);
-  --color-destructive:            var(--destructive);
-  --color-border:                 var(--border);
-  --color-input:                  var(--input);
-  --color-ring:                   var(--ring);
+  --color-background:           var(--background);
+  --color-foreground:           var(--foreground);
+  --color-card:                 var(--card);
+  --color-card-foreground:      var(--card-foreground);
+  --color-popover:              var(--popover);
+  --color-popover-foreground:   var(--popover-foreground);
+  --color-primary:              var(--primary);
+  --color-primary-foreground:   var(--primary-foreground);
+  --color-secondary:            var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted:                var(--muted);
+  --color-muted-foreground:     var(--muted-foreground);
+  --color-accent:               var(--accent);
+  --color-accent-foreground:    var(--accent-foreground);
+  --color-destructive:          var(--destructive);
+  --color-border:               var(--border);
+  --color-input:                var(--input);
+  --color-ring:                 var(--ring);
 
-  --radius-sm:  calc(var(--radius) * 0.6);
-  --radius-md:  calc(var(--radius) * 0.8);
+  --radius-sm:  calc(var(--radius) * 0.55);
+  --radius-md:  calc(var(--radius) * 0.75);
   --radius-lg:  var(--radius);
-  --radius-xl:  calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.4);
+  --radius-xl:  calc(var(--radius) * 1.35);
+  --radius-2xl: calc(var(--radius) * 1.75);
+  --radius-3xl: calc(var(--radius) * 2.2);
 
-  --font-sans:  var(--font-sans-custom);
-  --font-mono:  var(--font-geist-mono);
+  --font-sans: var(--font-sans-custom);
+  --font-mono: var(--font-geist-mono);
 
-  /* ── PYROBOT BRAND ─────────────────────────── */
-  --color-gold:           #F59E0B;
-  --color-gold-bright:    #FBBF24;
-  --color-gold-light:     #FCD34D;
-  --color-gold-pale:      rgba(245,158,11,0.12);
-  --color-gold-glow:      rgba(245,158,11,0.25);
+  /* ── Brand gold ──────────────────────────────── */
+  --color-gold:        var(--pyro-gold);
+  --color-gold-bright: var(--pyro-gold-bright);
+  --color-gold-light:  var(--pyro-gold-light);
+  --color-gold-pale:   var(--pyro-gold-pale);
 
-  /* Dark surface palette */
-  --color-surface-0:      #0A0A0A;
-  --color-surface-1:      #111111;
-  --color-surface-2:      #1A1A1A;
-  --color-surface-3:      #242424;
-  --color-surface-4:      #2E2E2E;
-
-  /* Light mode surfaces */
-  --color-light-0:        #FAFAF9;
-  --color-light-1:        #F5F5F4;
-  --color-light-2:        #E7E5E4;
-
-  /* Timing */
-  --animate-fast:   150ms cubic-bezier(.4,0,.2,1);
-  --animate-normal: 250ms cubic-bezier(.4,0,.2,1);
-  --animate-spring: 350ms cubic-bezier(.34,1.56,.64,1);
+  /* ── Timing ─────────────────────────────────── */
+  --animate-fast:   140ms cubic-bezier(.4,0,.2,1);
+  --animate-normal: 240ms cubic-bezier(.4,0,.2,1);
+  --animate-spring: 340ms cubic-bezier(.34,1.56,.64,1);
 }
 
-/* ── ROOT DARK MODE (default) ─────────────────────────────── */
+/* ══════════════════════════════════════════════════════
+   LIGHT MODE  (default — creamy warm white like mockup 2)
+══════════════════════════════════════════════════════ */
 :root {
   --radius: 1rem;
-  --background:          #0A0A0A;
-  --foreground:          #F5F5F4;
-  --card:                #141414;
-  --card-foreground:     #F5F5F4;
-  --popover:             #1A1A1A;
-  --popover-foreground:  #F5F5F4;
-  --primary:             #F59E0B;
+
+  --background:          #FAFAF5;
+  --foreground:          #1A1A1A;
+  --card:                #FFFFFF;
+  --card-foreground:     #1A1A1A;
+  --popover:             #FFFFFF;
+  --popover-foreground:  #1A1A1A;
+  --primary:             #C17D0A;
+  --primary-foreground:  #FFFFFF;
+  --secondary:           #F5F0E8;
+  --secondary-foreground:#404040;
+  --muted:               #F2EDE4;
+  --muted-foreground:    #888880;
+  --accent:              rgba(193,125,10,0.1);
+  --accent-foreground:   #C17D0A;
+  --destructive:         #DC2626;
+  --border:              rgba(0,0,0,0.07);
+  --input:               rgba(0,0,0,0.04);
+  --ring:                rgba(193,125,10,0.35);
+
+  /* Pyrobot brand */
+  --pyro-gold:        #C17D0A;
+  --pyro-gold-bright: #D4920E;
+  --pyro-gold-light:  #E8A820;
+  --pyro-gold-pale:   rgba(193,125,10,0.1);
+
+  /* Surfaces */
+  --pyro-bg:          #FAFAF5;
+  --pyro-card:        #FFFFFF;
+  --pyro-card2:       #F5F0E8;
+  --pyro-ai-bubble:   #FFFFFF;
+  --pyro-user-bubble: #FEF3C7;
+
+  /* Tool card bg (light mode) */
+  --pyro-tool-card:   #F7F3EC;
+}
+
+/* ══════════════════════════════════════════════════════
+   DARK MODE  (charcoal, not pure black, like mockup 2 right side)
+══════════════════════════════════════════════════════ */
+.dark {
+  --background:          #16161A;
+  --foreground:          #EBEBEB;
+  --card:                #1E1E24;
+  --card-foreground:     #EBEBEB;
+  --popover:             #252530;
+  --popover-foreground:  #EBEBEB;
+  --primary:             #D4920E;
   --primary-foreground:  #0A0A0A;
-  --secondary:           #1E1E1E;
-  --secondary-foreground:#D4D4D4;
-  --muted:               #1C1C1C;
-  --muted-foreground:    #737373;
-  --accent:              rgba(245,158,11,0.15);
-  --accent-foreground:   #F59E0B;
+  --secondary:           #252530;
+  --secondary-foreground:#CCCCCC;
+  --muted:               #202028;
+  --muted-foreground:    #666672;
+  --accent:              rgba(212,146,14,0.15);
+  --accent-foreground:   #D4920E;
   --destructive:         #EF4444;
   --border:              rgba(255,255,255,0.07);
-  --input:               rgba(255,255,255,0.06);
-  --ring:                rgba(245,158,11,0.5);
+  --input:               rgba(255,255,255,0.05);
+  --ring:                rgba(212,146,14,0.4);
 
-  /* Pyrobot semantic */
-  --pyro-gold:           #F59E0B;
-  --pyro-gold-light:     #FCD34D;
-  --pyro-gold-pale:      rgba(245,158,11,0.12);
-  --pyro-bg-dark:        #0A0A0A;
-  --pyro-surface-dark:   #181818;
-  --pyro-surface-dark2:  #222222;
-  --pyro-ai-bubble:      #1A1A1A;
-  --pyro-user-bubble:    #272217;
+  --pyro-gold:        #D4920E;
+  --pyro-gold-bright: #E8A820;
+  --pyro-gold-light:  #F5C842;
+  --pyro-gold-pale:   rgba(212,146,14,0.14);
+
+  --pyro-bg:          #16161A;
+  --pyro-card:        #1E1E24;
+  --pyro-card2:       #252530;
+  --pyro-ai-bubble:   #1E1E24;
+  --pyro-user-bubble: #2A2210;
+
+  --pyro-tool-card:   #1E1E24;
 }
 
-/* ── LIGHT MODE ────────────────────────────────────────────── */
-.light {
-  --background:          #FAFAF9;
-  --foreground:          #1C1C1C;
-  --card:                #FFFFFF;
-  --card-foreground:     #1C1C1C;
-  --popover:             #FFFFFF;
-  --popover-foreground:  #1C1C1C;
-  --primary:             #D97706;
-  --primary-foreground:  #FFFFFF;
-  --secondary:           #F5F5F4;
-  --secondary-foreground:#404040;
-  --muted:               #F5F5F4;
-  --muted-foreground:    #737373;
-  --accent:              rgba(217,119,6,0.1);
-  --accent-foreground:   #D97706;
-  --destructive:         #EF4444;
-  --border:              rgba(0,0,0,0.08);
-  --input:               rgba(0,0,0,0.04);
-  --ring:                rgba(217,119,6,0.4);
-
-  --pyro-gold:           #D97706;
-  --pyro-gold-light:     #F59E0B;
-  --pyro-gold-pale:      rgba(217,119,6,0.1);
-  --pyro-bg-dark:        #FAFAF9;
-  --pyro-surface-dark:   #FFFFFF;
-  --pyro-surface-dark2:  #F0EEE8;
-  --pyro-ai-bubble:      #FFFFFF;
-  --pyro-user-bubble:    #FEF3C7;
-}
-
-/* ── BASE STYLES ────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════
+   BASE
+══════════════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body {
   height: 100%;
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+               "Inter", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
 }
 
-/* ── TYPOGRAPHY SCALE ───────────────────────────────────────── */
-.text-display    { font-size: 2rem;    line-height: 1.15; letter-spacing: -0.03em; font-weight: 800; }
-.text-title      { font-size: 1.375rem; line-height: 1.25; letter-spacing: -0.02em; font-weight: 700; }
-.text-heading    { font-size: 1.0625rem; line-height: 1.35; letter-spacing: -0.01em; font-weight: 600; }
-.text-body       { font-size: 0.9375rem; line-height: 1.55; }
-.text-caption    { font-size: 0.8125rem; line-height: 1.4;  }
-.text-micro      { font-size: 0.6875rem; line-height: 1.4; letter-spacing: 0.01em; }
+/* ══════════════════════════════════════════════════════
+   TYPOGRAPHY
+══════════════════════════════════════════════════════ */
+.text-display  { font-size:2rem;     line-height:1.15; letter-spacing:-0.03em; font-weight:800; }
+.text-title    { font-size:1.5rem;   line-height:1.2;  letter-spacing:-0.025em;font-weight:700; }
+.text-heading  { font-size:1.0625rem;line-height:1.35; letter-spacing:-0.01em; font-weight:600; }
+.text-body     { font-size:0.9375rem;line-height:1.55; }
+.text-caption  { font-size:0.8125rem;line-height:1.4;  }
+.text-micro    { font-size:0.6875rem;line-height:1.4;  letter-spacing:0.01em;  }
 
-/* ── GLASS UTILITIES ────────────────────────────────────────── */
-.glass-dark {
-  background: rgba(10,10,10,0.85);
-  backdrop-filter: blur(20px) saturate(1.8);
-  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+/* ══════════════════════════════════════════════════════
+   GLASS / SURFACE UTILITIES
+══════════════════════════════════════════════════════ */
+.glass-topbar {
+  background: rgba(250,250,245,0.88);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
 }
-.glass-light {
-  background: rgba(255,255,255,0.88);
-  backdrop-filter: blur(20px) saturate(1.8);
-  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+.dark .glass-topbar {
+  background: rgba(22,22,26,0.88);
+  backdrop-filter: blur(20px) saturate(1.6);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-.glass-surface {
-  background: rgba(255,255,255,0.04);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+.glass-bottom {
+  background: rgba(250,250,245,0.92);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border-top: 1px solid rgba(0,0,0,0.06);
 }
+.dark .glass-bottom {
+  background: rgba(22,22,26,0.92);
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+/* legacy compat */
+.glass-dark { background:rgba(22,22,26,0.88); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
 
-/* ── GOLD UTILITIES ─────────────────────────────────────────── */
-.gold-text    { color: var(--pyro-gold); }
-.gold-bg      { background: var(--pyro-gold); }
-.gold-glow    { box-shadow: 0 0 20px rgba(245,158,11,0.35), 0 4px 12px rgba(0,0,0,0.4); }
-.gold-glow-sm { box-shadow: 0 0 12px rgba(245,158,11,0.25); }
-.gold-border  { border-color: rgba(245,158,11,0.3); }
-
-.gold-gradient {
-  background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 50%, #D97706 100%);
-}
+/* ══════════════════════════════════════════════════════
+   GOLD UTILITIES
+══════════════════════════════════════════════════════ */
+.gold-text     { color: var(--pyro-gold); }
+.gold-gradient { background: linear-gradient(135deg, var(--pyro-gold-bright) 0%, var(--pyro-gold) 100%); }
 .gold-gradient-text {
-  background: linear-gradient(135deg, #F59E0B, #FCD34D);
+  background: linear-gradient(135deg, var(--pyro-gold-light), var(--pyro-gold));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+.gold-glow     { box-shadow: 0 0 18px rgba(193,125,10,0.35), 0 4px 10px rgba(0,0,0,0.25); }
+.gold-glow-sm  { box-shadow: 0 0 10px rgba(193,125,10,0.25); }
+.dark .gold-glow    { box-shadow: 0 0 22px rgba(212,146,14,0.45), 0 4px 12px rgba(0,0,0,0.5); }
+.dark .gold-glow-sm { box-shadow: 0 0 12px rgba(212,146,14,0.3); }
 
-/* ── SCROLLBAR ──────────────────────────────────────────────── */
-::-webkit-scrollbar              { width: 0; }
-::-webkit-scrollbar-track        { background: transparent; }
-::-webkit-scrollbar-thumb        { background: transparent; }
+/* Shadows (light) */
+.card-shadow { box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04); }
+.dark .card-shadow { box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
 
-/* ── ANIMATIONS ─────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════
+   SCROLLBAR
+══════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 0; }
+
+/* ══════════════════════════════════════════════════════
+   ANIMATIONS
+══════════════════════════════════════════════════════ */
 @keyframes bubbleEnter {
-  from { opacity: 0; transform: translateY(8px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0)   scale(1); }
+  from { opacity:0; transform:translateY(8px) scale(0.97); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
 }
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position:  200% center; }
-}
-@keyframes pulseGold {
-  0%,100% { box-shadow: 0 0 12px rgba(245,158,11,0.3); }
-  50%      { box-shadow: 0 0 28px rgba(245,158,11,0.6); }
+  from { opacity:0; transform:translateY(18px); }
+  to   { opacity:1; transform:translateY(0); }
 }
 @keyframes floatLogo {
-  0%,100% { transform: translateY(0px); }
-  50%     { transform: translateY(-6px); }
+  0%,100% { transform:translateY(0px); }
+  50%     { transform:translateY(-7px); }
+}
+@keyframes flameFlicker {
+  0%,100% { transform:scaleY(1) scaleX(1); opacity:1; }
+  25%     { transform:scaleY(1.04) scaleX(0.97); opacity:0.95; }
+  75%     { transform:scaleY(0.97) scaleX(1.02); opacity:1; }
 }
 @keyframes sparkle {
-  0%,100% { opacity:0.6; transform: scale(0.9) rotate(0deg); }
-  50%     { opacity:1;   transform: scale(1.1) rotate(180deg); }
+  0%,100% { opacity:0.5; transform:scale(0.85) rotate(0deg); }
+  50%     { opacity:1;   transform:scale(1.1)  rotate(180deg); }
+}
+@keyframes pulseGold {
+  0%,100% { box-shadow:0 0 12px rgba(212,146,14,0.3); }
+  50%     { box-shadow:0 0 28px rgba(212,146,14,0.6); }
+}
+@keyframes slideUp {
+  from { opacity:0; transform:translateY(24px); }
+  to   { opacity:1; transform:translateY(0); }
 }
 
+.animate-fade-up    { animation: fadeUp    0.45s ease-out forwards; }
 .animate-float-logo { animation: floatLogo 4s ease-in-out infinite; }
-.animate-sparkle    { animation: sparkle  3s ease-in-out infinite; }
+.animate-flame      { animation: flameFlicker 2.5s ease-in-out infinite; }
+.animate-sparkle    { animation: sparkle   3s ease-in-out infinite; }
 .animate-pulse-gold { animation: pulseGold 2s ease-in-out infinite; }
-.animate-fade-up    { animation: fadeUp 0.5s ease-out forwards; }
+.animate-slide-up   { animation: slideUp   0.5s ease-out forwards; }
 
-/* ── BUBBLE SHAPES ──────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════
+   COMPONENT PATTERNS
+══════════════════════════════════════════════════════ */
+
+/* Chat bubbles */
 .bubble-user {
   background: var(--pyro-user-bubble);
-  border: 1px solid rgba(245,158,11,0.15);
+  border: 1px solid rgba(193,125,10,0.12);
   border-radius: 20px 20px 4px 20px;
 }
 .bubble-ai {
@@ -225,70 +260,90 @@ html, body {
   border: 1px solid var(--border);
   border-radius: 20px 20px 20px 4px;
 }
+.dark .bubble-user { border-color: rgba(212,146,14,0.18); }
 
-/* ── QUICK ACTION CHIPS ─────────────────────────────────────── */
-.quick-chip {
-  display: inline-flex;
+/* Input bar */
+.input-pill {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
-  border-radius: 14px;
+  gap: 10px;
+  padding: 13px 16px;
+  border-radius: 100px;
   background: var(--card);
   border: 1px solid var(--border);
-  color: var(--foreground);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--animate-fast);
-  white-space: nowrap;
+  transition: border-color var(--animate-fast), box-shadow var(--animate-fast);
 }
-.quick-chip:hover, .quick-chip:active {
-  border-color: rgba(245,158,11,0.35);
-  background: rgba(245,158,11,0.06);
-  color: var(--pyro-gold);
-  transform: scale(0.97);
+.input-pill:focus-within {
+  border-color: var(--pyro-gold);
+  box-shadow: 0 0 0 3px var(--pyro-gold-pale);
 }
 
-/* ── CONVERSATION LIST ITEM ─────────────────────────────────── */
-.convo-item {
+/* Convo list rows */
+.convo-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 15px 16px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all var(--animate-fast);
+}
+.convo-row:hover, .convo-row:active {
+  border-color: rgba(193,125,10,0.25);
+  background: var(--pyro-gold-pale);
+  transform: scale(0.99);
+}
+.dark .convo-row:hover, .dark .convo-row:active {
+  border-color: rgba(212,146,14,0.3);
+}
+
+/* Tool cards — dark rounded tiles (mockup 2 screen 3) */
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 18px 16px;
+  border-radius: 20px;
+  background: var(--pyro-tool-card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all var(--animate-fast);
+  min-height: 150px;
+}
+.tool-card:hover, .tool-card:active {
+  border-color: rgba(193,125,10,0.3);
+  transform: scale(0.97);
+}
+.dark .tool-card {
+  background: #1E1E24;
+  border-color: rgba(255,255,255,0.06);
+}
+.dark .tool-card:hover {
+  border-color: rgba(212,146,14,0.35);
+  background: #23232A;
+}
+
+/* Quick action chips (home) */
+.quick-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
   border-radius: 16px;
   background: var(--card);
   border: 1px solid var(--border);
   cursor: pointer;
   transition: all var(--animate-fast);
 }
-.convo-item:hover, .convo-item:active {
-  border-color: rgba(245,158,11,0.2);
-  background: rgba(245,158,11,0.04);
-  transform: scale(0.99);
+.quick-chip:hover, .quick-chip:active {
+  border-color: var(--pyro-gold);
+  background: var(--pyro-gold-pale);
+  transform: scale(0.96);
 }
 
-/* ── NAV BOTTOM ─────────────────────────────────────────────── */
-.nav-item-label { font-size: 0.6875rem; font-weight: 500; margin-top: 2px; }
-.nav-fab {
-  width: 52px; height: 52px;
-  border-radius: 18px;
-  display: flex; align-items: center; justify-content: center;
-  margin-top: -16px;
-  position: relative;
-  box-shadow: 0 0 24px rgba(245,158,11,0.45), 0 6px 16px rgba(0,0,0,0.5);
-}
-
-/* ── SEARCH / INPUT BOX ─────────────────────────────────────── */
-.home-input-box {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: 20px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  transition: border-color var(--animate-fast);
-}
-.home-input-box:focus-within {
-  border-color: rgba(245,158,11,0.4);
-}
+/* Nav bottom */
+.nav-item-label { font-size:0.6875rem; font-weight:500; margin-top:2px; line-height:1.2; }

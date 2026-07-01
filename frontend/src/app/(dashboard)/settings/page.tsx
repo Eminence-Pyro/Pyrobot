@@ -1,159 +1,167 @@
 "use client";
-import {
-  ChevronRight, User, Database, Puzzle, Shield,
-  HelpCircle, Crown, LogOut
-} from "lucide-react";
+import { useState } from "react";
+import { ChevronRight, Check, User, AlignLeft, MessageSquare, Database } from "lucide-react";
 import { useUserStore } from "@/store/userStore";
 import { useLogout } from "@/hooks/useAuth";
 import { PageTransition } from "@/components/providers/PageTransition";
-import { FlameIcon } from "@/components/ui/FlameLogo";
 
-const SETTINGS_ROWS = [
-  {
-    icon: User,
-    label: "Personalization",
-    sublabel: "Customize your AI experience",
-    href: "#",
-  },
-  {
-    icon: Database,
-    label: "Memory",
-    sublabel: "Manage what Pyrobot remembers",
-    href: "/memories",
-  },
-  {
-    icon: Puzzle,
-    label: "Integrations",
-    sublabel: "Connect your favourite tools",
-    href: "#",
-  },
-  {
-    icon: Shield,
-    label: "Security & Privacy",
-    sublabel: "Your data is always protected",
-    href: "#",
-  },
-  {
-    icon: HelpCircle,
-    label: "Help & Support",
-    sublabel: "We're here to help you",
-    href: "#",
-  },
+type Tab = "Tools" | "AI Models" | "Customize";
+
+const AI_MODELS = [
+  { id:"gpt4o",  name:"GPT-4o",        desc:"Smart, versatile, and perfect for most tasks.",  color:"#F59E0B", accent:"rgba(245,158,11,0.15)", badge:"👑" },
+  { id:"claude", name:"Claude 3.5",    desc:"Great for writing and reasoning.",                color:"#8B5CF6", accent:"rgba(139,92,246,0.12)", badge:"✦"  },
+  { id:"gemini", name:"Gemini 1.5 Pro",desc:"Great for research and analysis.",                color:"#3B82F6", accent:"rgba(59,130,246,0.12)", badge:null },
+  { id:"perplx", name:"Perplexity",    desc:"Real-time info and web search.",                  color:"#06B6D4", accent:"rgba(6,182,212,0.12)",  badge:"✦"  },
+];
+
+const CUSTOMIZE = [
+  { icon:User,          label:"Personality",    value:"Balanced" },
+  { icon:AlignLeft,     label:"Response Length",value:"Detailed" },
+  { icon:MessageSquare, label:"Tone",           value:"Friendly" },
+  { icon:Database,      label:"Memory",         value:"On"       },
+];
+
+const TOOLS_ROWS = [
+  { label:"Edit Profile",          value:""         },
+  { label:"Notification Settings", value:"On"       },
+  { label:"Language",              value:"English"  },
+  { label:"App Appearance",        value:"Dark"     },
+  { label:"Privacy & Data",        value:""         },
 ];
 
 export default function SettingsPage() {
-  const { user }  = useUserStore();
-  const logout    = useLogout();
-  const initials  = user?.username?.[0]?.toUpperCase() ?? "?";
+  const { user }   = useUserStore();
+  const logout     = useLogout();
+  const [tab, setTab]        = useState<Tab>("AI Models");
+  const [model, setModel]    = useState("gpt4o");
+  const initials             = user?.username?.[0]?.toUpperCase() ?? "?";
 
   return (
     <PageTransition>
-      <div className="flex flex-col min-h-full pb-8 max-w-2xl mx-auto w-full px-4 pt-5">
+      <div className="flex flex-col min-h-full pb-8 max-w-2xl mx-auto w-full px-4 pt-4">
 
-        {/* ── Profile card ── */}
+        {/* ── Tabs ── */}
         <div
-          className="rounded-2xl p-4 mb-4 animate-fade-up flex items-center gap-4"
-          style={{ background: "var(--card)", border: "1px solid var(--border)" }}
+          className="flex rounded-xl p-1 gap-1 mb-5"
+          style={{background:"var(--pyro-surface-1)",border:"1px solid var(--border)"}}
         >
-          {/* Avatar — flame logo in dark circle */}
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
-            style={{ background: "#1A1208", border: "1.5px solid rgba(212,146,14,0.3)" }}
-          >
-            <FlameIcon size={38} />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              <p className="text-heading font-bold text-foreground truncate">
-                {user?.username ?? "Pyrobot"}
-              </p>
-              {/* Pro badge */}
-              <span
-                className="flex items-center gap-1 px-2 py-0.5 rounded-md text-micro font-bold text-white"
-                style={{ background: "linear-gradient(135deg, #D4920E, #C17D0A)", fontSize: "0.65rem" }}
-              >
-                ⭐ Pro
-              </span>
-            </div>
-            <p className="text-micro text-muted-foreground truncate">
-              {user?.email ?? "pyrobot@ai.com"}
-            </p>
-            <p className="text-micro text-muted-foreground mt-0.5">
-              Advanced AI. Personalized for you.
-            </p>
-          </div>
-
-          <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
-        </div>
-
-        {/* ── Pro card ── */}
-        <div
-          className="rounded-2xl p-4 mb-5 flex items-center gap-3 animate-fade-up"
-          style={{
-            background: "linear-gradient(135deg, #2A1E04, #1E1608)",
-            border: "1px solid rgba(212,146,14,0.25)",
-            animationDelay: "50ms",
-          }}
-        >
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: "rgba(212,146,14,0.2)", border: "1px solid rgba(212,146,14,0.35)" }}
-          >
-            <Crown size={20} style={{ color: "#D4920E" }} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-caption font-bold text-foreground">Pyrobot Pro</p>
-            <p className="text-micro text-muted-foreground">Unlock advanced features and priority access.</p>
-          </div>
-          <span
-            className="flex items-center gap-1 px-3 py-1 rounded-lg text-micro font-bold"
-            style={{ background: "rgba(212,146,14,0.15)", color: "#D4920E", border: "1px solid rgba(212,146,14,0.3)" }}
-          >
-            ✓ Active
-          </span>
-        </div>
-
-        {/* ── Settings rows ── */}
-        <div className="space-y-2.5 animate-fade-up" style={{ animationDelay: "90ms" }}>
-          {SETTINGS_ROWS.map(({ icon: Icon, label, sublabel, href }) => (
-            <a
-              key={label}
-              href={href}
-              className="flex items-center gap-3.5 w-full p-4 rounded-2xl transition-all"
+          {(["Tools","AI Models","Customize"] as Tab[]).map(t=>(
+            <button
+              key={t}
+              onClick={()=>setTab(t)}
+              className="flex-1 py-2 rounded-lg text-caption font-semibold transition-all"
               style={{
-                background: "var(--card)",
-                border: "1px solid var(--border)",
-                textDecoration: "none",
+                background: tab===t ? "var(--pyro-gold)" : "transparent",
+                color:      tab===t ? "#000"             : "var(--muted-foreground)",
               }}
             >
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: "var(--muted)", border: "1px solid var(--border)" }}
-              >
-                <Icon size={17} className="text-muted-foreground" strokeWidth={1.8} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-body font-semibold text-foreground">{label}</p>
-                <p className="text-micro text-muted-foreground mt-0.5">{sublabel}</p>
-              </div>
-              <ChevronRight size={15} className="text-muted-foreground flex-shrink-0" />
-            </a>
+              {t}
+            </button>
           ))}
         </div>
 
-        {/* ── Sign out ── */}
-        <button
-          onClick={logout}
-          className="mt-6 w-full py-4 rounded-2xl font-semibold text-destructive transition-all active:scale-97"
-          style={{
-            background: "rgba(220,38,38,0.05)",
-            border: "1px solid rgba(220,38,38,0.12)",
-          }}
-        >
-          <LogOut size={16} className="inline mr-2 -mt-0.5" />
-          Sign Out
-        </button>
+        {/* ── AI Models tab ── */}
+        {tab === "AI Models" && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-heading font-bold text-foreground">AI Models</h2>
+              <button className="gold-text text-caption font-semibold flex items-center gap-0.5">
+                Manage <ChevronRight size={13}/>
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {AI_MODELS.map(m=>{
+                const isActive = model === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={()=>setModel(m.id)}
+                    className="relative text-left p-4 rounded-2xl transition-all"
+                    style={{
+                      background: isActive ? m.accent : "var(--pyro-surface-1)",
+                      border:`1.5px solid ${isActive ? m.color : "var(--border)"}`,
+                    }}
+                  >
+                    {isActive && (
+                      <div
+                        className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full flex items-center justify-center"
+                        style={{background:m.color}}
+                      >
+                        <Check size={11} className="text-black" strokeWidth={3}/>
+                      </div>
+                    )}
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 text-lg"
+                      style={{background:m.accent,border:`1px solid ${m.color}30`}}
+                    >
+                      {m.badge ?? "🤖"}
+                    </div>
+                    <p className="text-caption font-bold text-foreground">{m.name}</p>
+                    <p className="text-micro text-muted-foreground mt-0.5 leading-relaxed">{m.desc}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Customize tab ── */}
+        {tab === "Customize" && (
+          <div>
+            <h2 className="text-heading font-bold text-foreground mb-3">Customization</h2>
+            <div className="space-y-2.5">
+              {CUSTOMIZE.map(({icon:Icon,label,value})=>(
+                <button
+                  key={label}
+                  className="flex items-center gap-3 w-full p-4 rounded-2xl text-left"
+                  style={{background:"var(--pyro-surface-1)",border:"1px solid var(--border)"}}
+                >
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{background:"var(--pyro-gold-pale)",border:"1px solid rgba(245,158,11,0.2)"}}
+                  >
+                    <Icon size={17} className="gold-text"/>
+                  </div>
+                  <span className="flex-1 text-body font-medium text-foreground">{label}</span>
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <span className="text-caption">{value}</span>
+                    <ChevronRight size={14}/>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Tools tab ── */}
+        {tab === "Tools" && (
+          <div>
+            <h2 className="text-heading font-bold text-foreground mb-3">Tools & Account</h2>
+            <div className="space-y-2.5">
+              {TOOLS_ROWS.map(({label,value})=>(
+                <button
+                  key={label}
+                  className="flex items-center gap-3 w-full p-4 rounded-2xl text-left"
+                  style={{background:"var(--pyro-surface-1)",border:"1px solid var(--border)"}}
+                >
+                  <span className="flex-1 text-body font-medium text-foreground">{label}</span>
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    {value && <span className="text-caption">{value}</span>}
+                    <ChevronRight size={14}/>
+                  </div>
+                </button>
+              ))}
+
+              <button
+                onClick={logout}
+                className="w-full p-4 rounded-2xl font-semibold text-destructive"
+                style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.15)"}}
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </PageTransition>
   );

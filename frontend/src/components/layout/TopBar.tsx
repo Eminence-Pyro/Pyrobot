@@ -1,57 +1,82 @@
 "use client";
-import { SquarePen } from "lucide-react";
-import Link from "next/link";
+import { Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useUserStore } from "@/store/userStore";
+import { useLogout } from "@/hooks/useAuth";
+import { FlameLogo } from "@/components/ui/FlameLogo";
 
 interface TopBarProps {
-  title?: string;
+  /** Optional left element — replaces logo (e.g. back button in chat) */
   leftSlot?: React.ReactNode;
+  /** Optional right element — replaces avatar */
   rightSlot?: React.ReactNode;
-  showEditButton?: boolean;
+  /** Override centre title */
+  title?: string;
+  subtitle?: string;
 }
 
-export function TopBar({ title = "PYROBOT", leftSlot, rightSlot, showEditButton = true }: TopBarProps) {
+export function TopBar({ leftSlot, rightSlot, title, subtitle }: TopBarProps) {
+  const { resolvedTheme, setTheme } = useTheme();
+  const { user } = useUserStore();
+  const logout   = useLogout();
+  const initials = user?.username?.[0]?.toUpperCase() ?? "?";
+  const isDark   = resolvedTheme === "dark";
+
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 glass-topbar"
-      style={{ height: 56 }}
+      className="fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center justify-between px-4 glass-bar border-b"
     >
-      {/* Left slot */}
-      <div className="w-10 flex items-center">
+      {/* Left */}
+      <div className="flex items-center gap-2.5 min-w-0">
         {leftSlot ?? (
-          <button
-            className="w-9 h-9 flex items-center justify-center text-foreground/60 hover:text-foreground transition-colors"
-            aria-label="Menu"
-          >
-            {/* Hamburger — 3 lines */}
-            <svg width="20" height="14" viewBox="0 0 20 14" fill="none">
-              <rect x="0" y="0"  width="20" height="2" rx="1" fill="currentColor"/>
-              <rect x="0" y="6"  width="14" height="2" rx="1" fill="currentColor"/>
-              <rect x="0" y="12" width="20" height="2" rx="1" fill="currentColor"/>
-            </svg>
-          </button>
+          <>
+            <FlameLogo size={32} showSparkle />
+            <div className="flex flex-col leading-none">
+              <span className="text-heading font-black tracking-tight text-foreground">
+                Pyrobot{" "}
+                <span className="gold-gradient-text text-xs align-super">✦</span>
+              </span>
+              <span className="text-micro text-muted-foreground">Your AI Assistant</span>
+            </div>
+          </>
         )}
       </div>
 
-      {/* Centre wordmark */}
-      <h1
-        className="font-black tracking-widest uppercase"
-        style={{ fontSize: "1rem", letterSpacing: "0.18em", color: "var(--foreground)" }}
-      >
-        {title}
-      </h1>
+      {/* Centre (chat uses this for conversation title) */}
+      {title && (
+        <div className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none">
+          <p className="text-heading font-semibold text-foreground truncate max-w-[180px]">{title}</p>
+          {subtitle && <p className="text-micro text-muted-foreground">{subtitle}</p>}
+        </div>
+      )}
 
-      {/* Right slot */}
-      <div className="w-10 flex items-center justify-end">
+      {/* Right */}
+      <div className="flex items-center gap-2 flex-shrink-0">
         {rightSlot ?? (
-          showEditButton ? (
-            <Link
-              href="/chat/new"
-              className="w-9 h-9 flex items-center justify-center text-foreground/60 hover:text-foreground transition-colors"
-              aria-label="New chat"
+          <>
+            {/* Dark/light toggle */}
+            <button
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-gold transition-colors"
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             >
-              <SquarePen size={19} strokeWidth={1.8} />
-            </Link>
-          ) : null
+              {isDark
+                ? <Sun  size={17} strokeWidth={1.8} />
+                : <Moon size={17} strokeWidth={1.8} />}
+            </button>
+
+            {/* User avatar / logout */}
+            {user && (
+              <button
+                onClick={logout}
+                className="w-9 h-9 rounded-full flex items-center justify-center text-black font-bold text-caption gold-gradient gold-glow"
+                aria-label={`Signed in as ${user.username}. Tap to sign out.`}
+                title="Sign out"
+              >
+                {initials}
+              </button>
+            )}
+          </>
         )}
       </div>
     </header>
